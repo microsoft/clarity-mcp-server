@@ -21,7 +21,7 @@ A Model Context Protocol (MCP) server for interacting with the Microsoft Clarity
   "mcpServers": {
     "clarity-data-export": {
       "command": "npx",
-      "args": ["@ahosma/clarity-mcp-server", "--token=YOUR_API_TOKEN", "--projectId=YOUR_PROJECT_ID"]
+      "args": ["@microsoft/clarity-mcp-server", "--token=YOUR_API_TOKEN", "--projectId=YOUR_PROJECT_ID"]
     }
   }
 }
@@ -32,13 +32,13 @@ A Model Context Protocol (MCP) server for interacting with the Microsoft Clarity
 Install the Clarity MCP server in VS Code using the VS Code CLI:
 
 ```bash
-code --add-mcp '{"name":"clarity-data-export","command":"npx","args":["@ahosma/clarity-mcp-server","--token=YOUR_API_TOKEN","--projectId=YOUR_PROJECT_ID"]}'
+code --add-mcp '{"name":"clarity-data-export","command":"npx","args":["@microsoft/clarity-mcp-server","--token=YOUR_API_TOKEN","--projectId=YOUR_PROJECT_ID"]}'
 ```
 
 ## Installation via npm
 
 ```bash
-npm install -g @ahosma/clarity-mcp-server
+npm install -g @microsoft/clarity-mcp-server
 ```
 
 Then run using:
@@ -86,7 +86,7 @@ The Clarity MCP server supports the following command-line options:
 ## Programmatic usage
 
 ```typescript
-import { createServer } from '@ahosma/clarity-mcp-server';
+import { createServer } from '@microsoft/clarity-mcp-server';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
 // Create server with your token
