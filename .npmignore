@@ -1,0 +1,23 @@
+# Source files (as they'll be compiled)
+src/
+
+# Development files
+node_modules/
+.vscode/
+.git/
+.gitignore
+
+# Test files
+test/
+*.test.ts
+*.spec.ts
+
+# Configuration files
+tsconfig.json
+.eslintrc*
+.prettierrc*
+
+# Miscellaneous
+.DS_Store
+*.log
+npm-debug.log*

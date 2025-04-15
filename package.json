@@ -1,0 +1,46 @@
+{
+  "name": "@ahosma/clarity-mcp-server",
+  "version": "1.0.0",
+  "description": "A Model Context Protocol server for Microsoft Clarity data export API",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "clarity-mcp": "./build/index.js"
+  },
+  "files": [
+    "build/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "dev": "tsc --watch & node --watch build/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "clarity",
+    "api",
+    "typescript",
+    "analytics",
+    "heatmap"
+  ],
+  "author": "Ahmed Osman",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ahosma/clarity-mcp-server"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.9.0",
+    "axios": "^1.8.4",
+    "zod": "^3.24.2"
+  }
+}
