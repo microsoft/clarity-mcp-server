@@ -1,348 +1,202 @@
-#!/usr/bin/env node
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { z } from 'zod';
-import { ClarityService } from './service.js';
-import { ClarityDimension } from './types.js';
-import { parseArgs } from 'node:util';
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
 
-// Interface for server creation options
-export interface ClarityServerOptions {
-  token: string;
-  projectId?: string;
-}
-
-/**
- * Creates a Clarity MCP server instance
- * @param options Server options with API token and optional project ID
- * @returns Configured MCP server instance
- */
-export function createServer(options: ClarityServerOptions): McpServer {
-  if (!options.token) {
-    throw new Error('API token is required to create a Clarity MCP server');
+// Get configuration from environment variables or command-line arguments
+const getConfigValue = (name: string, fallback?: string): string | undefined => {
+  // Check command line args first (format: --name=value)
+  const commandArg = process.argv.find(arg => arg.startsWith(`--${name}=`));
+  if (commandArg) {
+    return commandArg.split('=')[1];
   }
-
-  // Create the Clarity service
-  const clarityService = new ClarityService(options.token);
-
-  // Create MCP server instance
-  const server = new McpServer({
-    name: "clarity-data-export",
-    version: "1.0.0",
-    capabilities: {
-      resources: {},
-      tools: {},
-    },
-  });
-
-  // Tool: Get traffic data
-  server.tool(
-    "get-traffic",
-    "Get traffic data from Microsoft Clarity",
-    {
-      days: z.number().min(1).max(3).describe("Number of days (1-3) to retrieve data for"),
-      dimensions: z.array(z.enum([
-        ClarityDimension.Browser,
-        ClarityDimension.Device, 
-        ClarityDimension.CountryRegion, 
-        ClarityDimension.OS, 
-        ClarityDimension.Source, 
-        ClarityDimension.Medium, 
-        ClarityDimension.Campaign, 
-        ClarityDimension.Channel, 
-        ClarityDimension.URL, 
-        ClarityDimension.PageTitle, 
-        ClarityDimension.ReferrerURL
-      ] as [string, ...string[]]))
-      .max(3)
-      .optional()
-      .describe("Up to 3 dimensions to break down insights (Browser, Device, Country/Region, OS, Source, etc)"),
-    },
-    async ({ days, dimensions = [] }) => {
-      try {
-        // Validate dimensions count
-        if (dimensions.length > 3) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "Error: Maximum of 3 dimensions can be passed in a single request.",
-              },
-            ],
-          };
-        }
-
-        // Get remaining API request count
-        const remainingRequests = clarityService.getRemainingRequests();
-        if (remainingRequests <= 0) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "Error: Daily API request limit exceeded (10 requests per day).",
-              },
-            ],
-          };
-        }
-
-        const params = {
-          numOfDays: days as 1 | 2 | 3,
-          dimension1: dimensions[0] as ClarityDimension,
-          dimension2: dimensions[1] as ClarityDimension,
-          dimension3: dimensions[2] as ClarityDimension,
-          projectId: options.projectId || undefined
-        };
-
-        // Fetch data from Clarity API
-        const data = await clarityService.fetchData(params);
-        
-        // Format data for display
-        const formattedData = clarityService.formatResponseData(data);
-        
-        return {
-          content: [
-            {
-              type: "text",
-              text: formattedData + `\n\nRemaining API requests for today: ${clarityService.getRemainingRequests()}/10`,
-            },
-          ],
-        };
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${(error as Error).message}`,
-            },
-          ],
-        };
-      }
-    },
-  );
-
-  // Tool: Get user metrics
-  server.tool(
-    "get-metrics",
-    "Get specific metrics from Microsoft Clarity",
-    {
-      days: z.number().min(1).max(3).describe("Number of days (1-3) to retrieve data for"),
-      metrics: z.enum([
-        'Traffic',
-        'Popular Pages',
-        'Browser',
-        'Device',
-        'OS',
-        'Country/Region',
-        'Scroll Depth',
-        'Engagement Time'
-      ] as [string, ...string[]]).describe("Metric to retrieve data for"),
-      dimensions: z.array(z.enum([
-        ClarityDimension.Browser,
-        ClarityDimension.Device, 
-        ClarityDimension.CountryRegion, 
-        ClarityDimension.OS, 
-        ClarityDimension.Source, 
-        ClarityDimension.Medium, 
-        ClarityDimension.Campaign, 
-        ClarityDimension.Channel, 
-        ClarityDimension.URL, 
-        ClarityDimension.PageTitle, 
-        ClarityDimension.ReferrerURL
-      ] as [string, ...string[]]))
-      .max(3)
-      .optional()
-      .describe("Up to 3 dimensions to break down insights"),
-    },
-    async ({ days, metrics, dimensions = [] }) => {
-      try {
-        // Validate dimensions count
-        if (dimensions.length > 3) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "Error: Maximum of 3 dimensions can be passed in a single request.",
-              },
-            ],
-          };
-        }
-
-        // Get remaining API request count
-        const remainingRequests = clarityService.getRemainingRequests();
-        if (remainingRequests <= 0) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "Error: Daily API request limit exceeded (10 requests per day).",
-              },
-            ],
-          };
-        }
-
-        const params = {
-          numOfDays: days as 1 | 2 | 3,
-          dimension1: dimensions[0] as ClarityDimension,
-          dimension2: dimensions[1] as ClarityDimension,
-          dimension3: dimensions[2] as ClarityDimension,
-          projectId: options.projectId || undefined
-        };
-
-        // Fetch data from Clarity API
-        const data = await clarityService.fetchData(params);
-        
-        // Filter data to only the requested metric
-        const filteredData = data.filter(item => item.metricName === metrics);
-        
-        // Format data for display
-        const formattedData = clarityService.formatResponseData(filteredData);
-        
-        return {
-          content: [
-            {
-              type: "text",
-              text: formattedData + `\n\nRemaining API requests for today: ${clarityService.getRemainingRequests()}/10`,
-            },
-          ],
-        };
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${(error as Error).message}`,
-            },
-          ],
-        };
-      }
-    },
-  );
-
-  // Tool: Get API information
-  server.tool(
-    "get-api-info",
-    "Get information about Microsoft Clarity API limits and status",
-    {},
-    async () => {
-      try {
-        const remainingRequests = clarityService.getRemainingRequests();
-        
-        const apiInfo = `
-# Microsoft Clarity API Information
-
-## API Limits
-- Maximum of 10 API requests are allowed per project per day
-- Data retrieval is confined to the previous 1 to 3 days
-- Maximum of three dimensions can be passed in a single request
-- The response is limited to 1,000 rows and can't be paginated
-
-## Current Status
-- Remaining API requests for today: ${remainingRequests}/10
-- Project ID: ${options.projectId || 'Not specified'}
-
-## Available Dimensions
-${Object.values(ClarityDimension).map(dim => `- ${dim}`).join('\n')}
-
-## Available Metrics
-- Traffic
-- Popular Pages
-- Browser
-- Device
-- OS
-- Country/Region
-- Scroll Depth
-- Engagement Time
-`;
-        
-        return {
-          content: [
-            {
-              type: "text",
-              text: apiInfo,
-            },
-          ],
-        };
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${(error as Error).message}`,
-            },
-          ],
-        };
-      }
-    },
-  );
-
-  return server;
-}
-
-// Parse command-line arguments when run directly
-if (import.meta.url === import.meta.resolve('.') || process.argv.includes('--help') || process.argv.includes('-h')) {
-  const { values } = parseArgs({
-    args: process.argv.slice(2),
-    options: {
-      token: {
-        type: 'string',
-        short: 't',
-        default: '',
-      },
-      projectId: {
-        type: 'string',
-        short: 'p',
-        default: '',
-      },
-      help: {
-        type: 'boolean',
-        short: 'h',
-        default: false,
-      }
-    },
-    allowPositionals: true,
-  });
-
-  // Display help if requested or no arguments provided
-  if (values.help || process.argv.length <= 2) {
-    console.log(`
-Clarity Data Export MCP Server
-
-Usage: clarity-mcp --token=YOUR_API_TOKEN [--projectId=YOUR_PROJECT_ID]
-
-Options:
-  -t, --token      Microsoft Clarity API token (required)
-  -p, --projectId  Microsoft Clarity Project ID (optional)
-  -h, --help       Display this help message
-  `);
-    process.exit(0);
+  
+  // Then check environment variables
+  if (process.env[name] || process.env[name.toUpperCase()]) {
+    return process.env[name] || process.env[name.toUpperCase()];
   }
+  
+  return fallback;
+};
 
-  // Validate required arguments
-  const apiToken = values.token;
-  if (!apiToken) {
-    console.error('Error: API token is required. Use --token=YOUR_API_TOKEN or -t YOUR_API_TOKEN');
-    console.error('For more information, use --help');
-    process.exit(1);
-  }
+// Get configuration
+const CLARITY_API_TOKEN = getConfigValue('clarity_api_token');
 
-  // Create and run server
-  const server = createServer({
-    token: apiToken,
-    projectId: values.projectId
-  });
+// Create server instance
+const server = new McpServer({
+  name: "@microsoft/clarity-mcp-server",
+  version: "1.0.0",
+  capabilities: {
+    resources: {},
+    tools: {},
+  },
+});
 
-  // Main function to run the server
-  async function main() {
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-    console.error("Clarity Data Export MCP Server running on stdio");
-    if (values.projectId) {
-      console.error(`Using Project ID: ${values.projectId}`);
+// Constants for API
+const API_BASE_URL = "https://www.clarity.ms/export-data/api/v1/project-live-insights";
+
+// Available metrics that may be returned by the API
+const AVAILABLE_METRICS = [
+  "ScrollDepth",
+  "EngagementTime",
+  "Traffic",
+  "PopularPages",
+  "Browser",
+  "Device",
+  "OS",
+  "Country/Region",
+  "PageTitle",
+  "ReferrerURL",
+  "DeadClickCount",
+  "ExcessiveScroll",
+  "RageClickCount",
+  "QuickbackClick",
+  "ScriptErrorCount",
+  "ErrorClickCount"
+];
+
+// Available dimensions that can be used in queries
+const AVAILABLE_DIMENSIONS = [
+  "Browser",
+  "Device",
+  "Country/Region",
+  "OS",
+  "Source",
+  "Medium",
+  "Campaign",
+  "Channel",
+  "URL"
+];
+
+// Helper function to make API requests
+async function fetchClarityData(
+  token: string, 
+  numOfDays: number, 
+  dimensions: string[] = []
+): Promise<any> {
+  try {
+    // Build parameters for the API request
+    const params = new URLSearchParams();
+    params.append("numOfDays", numOfDays.toString());
+    
+    // Add dimensions if specified (maximum 3 allowed)
+    dimensions.slice(0, 3).forEach((dim, index) => {
+      params.append(`dimension${index + 1}`, dim);
+    });
+    
+    // Make the API request
+    const url = `${API_BASE_URL}?${params.toString()}`;
+    console.error(`Making request to: ${url}`);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
     }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching Clarity data:", error);
+    return { error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+// Register the get-clarity-data tool
+server.tool(
+  "get-clarity-data",
+  "Fetch Microsoft Clarity analytics data",
+  {
+    numOfDays: z.number().min(1).max(3).describe("Number of days to retrieve data for (1-3)"),
+    dimensions: z.array(z.string()).optional().describe("Up to 3 dimensions to filter by (Browser, Device, Country/Region, OS, Source, Medium, Campaign, Channel, URL)"),
+    metrics: z.array(z.string()).optional().describe("Metrics to retrieve (Scroll Depth, Engagement Time, Traffic, Popular Pages, Browser, Device, OS, Country/Region, etc.)"),
+    token: z.string().optional().describe("Your Clarity API token (optional if provided via environment or command line)"),
+  },
+  async ({ numOfDays, dimensions = [], metrics = [], token }) => {
+    // Use provided token or fallback to environment/command-line variables
+    const finalToken = token || CLARITY_API_TOKEN;
+    
+    // Check if we have the necessary credentials
+    if (!finalToken) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "No Clarity API token provided. Please provide a token via the 'token' parameter, CLARITY_API_TOKEN environment variable, or --clarity_api_token command-line argument.",
+          },
+        ],
+      };
+    }
+
+    // Validate dimensions against known valid dimensions
+    const filteredDimensions = dimensions.filter(d => AVAILABLE_DIMENSIONS.includes(d));
+    if (filteredDimensions.length < dimensions.length) {
+      console.warn("Some dimensions were invalid and have been filtered out");
+    }
+
+    // Fetch data from Clarity API
+    const data = await fetchClarityData(finalToken, numOfDays, filteredDimensions);
+
+    // Check for errors
+    if (data.error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error fetching data: ${data.error}`,
+          },
+        ],
+      };
+    }
+
+    // Filter metrics if specified
+    let formattedResult = data;
+    if (metrics && metrics.length > 0) {
+      // Filter the metrics if requested (case-insensitive match for user convenience)
+      formattedResult = data.filter((item: any) => 
+        metrics.some(m => 
+          item.metricName.toLowerCase() === m.toLowerCase() ||
+          item.metricName.replace(/\s+/g, '').toLowerCase() === m.replace(/\s+/g, '').toLowerCase()
+        )
+      );
+    }
+
+    const resultText = JSON.stringify(formattedResult, null, 2);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: resultText,
+        },
+      ],
+    };
+  },
+);
+
+// Main function
+async function main() {
+  // Log configuration status
+  if (CLARITY_API_TOKEN) {
+    console.error("Clarity API token configured via environment/command-line");
+  } else {
+    console.error("No Clarity API token configured, it must be provided with each request");
   }
 
-  main().catch((error) => {
-    console.error("Fatal error in main():", error);
-    process.exit(1);
-  });
+  console.error(`Supported metrics: ${AVAILABLE_METRICS.join(", ")}`);
+  console.error(`Supported dimensions: ${AVAILABLE_DIMENSIONS.join(", ")}`);
+
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error("Microsoft Clarity Data Export MCP Server running on stdio");
 }
+
+// Run the server
+main().catch((error) => {
+  console.error("Fatal error in main():", error);
+  process.exit(1);
+});
