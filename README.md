@@ -7,7 +7,7 @@ This is a Model Context Protocol (MCP) server for the Microsoft Clarity data exp
 - Query Microsoft Clarity analytics data through a simple interface
 - Filter by up to 3 dimensions (Browser, Device, Country/Region, OS, etc.)
 - Retrieve various metrics (Scroll Depth, Engagement Time, Traffic, etc.)
-- Seamlessly integrates with Claude for Desktop
+- Seamlessly integrates with Claude for Desktop and other MCP clients
 
 ## Setup and Installation
 
@@ -15,11 +15,11 @@ This is a Model Context Protocol (MCP) server for the Microsoft Clarity data exp
 
 - Node.js v16 or higher
 - A Microsoft Clarity account and API token
-- Claude for Desktop (or other MCP client)
+- Any MCP-compatible client (Claude for Desktop, etc.)
 
 ### Installation
 
-#### Option 1: Install via [npm](https://www.npmjs.com/package/@microsoft/clarity-mcp-server) (recommended)
+#### Option 1: Install via npm (recommended)
 
 You can install and run this package directly using npm:
 
@@ -73,37 +73,11 @@ You can provide the [Clarity data export API](https://learn.microsoft.com/en-us/
 2. **Tool Parameters**:
    - Provide `token` as a parameter when calling the `get-clarity-data` tool
 
-## Running with Claude for Desktop
+## Configuring MCP Clients
 
-### Option 1: Using VS Code and MCP Configuration
+### Generic MCP Client Configuration
 
-1. Open the project folder in VS Code
-2. Edit the `.vscode/mcp.json` file and set your credentials:
-   ```json
-   {
-     "servers": {
-       "@microsoft/clarity-mcp-server": {
-         "type": "stdio",
-         "command": "npx",
-         "args": ["@microsoft/clarity-mcp-server", "--clarity_api_token=your-api-token-here"]
-       }
-     }
-   }
-   ```
-
-3. Launch Claude for Desktop
-
-Claude for Desktop should automatically detect the server through the VS Code integration.
-
-### Option 2: Manual Configuration
-
-To manually configure Claude for Desktop to use this server:
-
-1. Open your Claude for Desktop configuration file:
-   - **Windows**: `%AppData%\Claude\claude_desktop_config.json`
-   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-2. Add the following configuration:
+MCP clients typically require configuration to connect to the server. Here's a general example of how to configure an MCP client:
 
 ```json
 {
@@ -119,15 +93,27 @@ To manually configure Claude for Desktop to use this server:
 }
 ```
 
+The specifics of where and how to add this configuration will depend on your specific MCP client.
+
+### Claude for Desktop Configuration
+
+To configure Claude for Desktop to use this server:
+
+1. Open your Claude for Desktop configuration file:
+   - **Windows**: `%AppData%\Claude\claude_desktop_config.json`
+   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+2. Add the configuration shown in the generic example above
+
 3. Save the configuration file and restart Claude for Desktop
 
 ## Using the Server
 
-When using Claude with this server configured, you can ask it to fetch Clarity data. For example:
+When using an MCP client with this server configured, you can ask it to fetch Clarity data. For example:
 
 "Can you fetch my Clarity data for the last day, filtered by Browser and showing Traffic metrics?"
 
-Claude will then prompt you to run the `get-clarity-data` tool, which requires:
+The MCP client will then prompt you to run the `get-clarity-data` tool, which requires:
 - `numOfDays`: Number of days to retrieve (1-3)
 - `dimensions`: Array of dimensions to filter by (optional)
 - `metrics`: Array of metrics to retrieve (optional)
