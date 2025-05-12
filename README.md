@@ -1,105 +1,158 @@
-# Clarity MCP Server
+# Microsoft Clarity Data Export MCP Server
 
-A Model Context Protocol (MCP) server for interacting with the Microsoft Clarity Data Export API. This server enables AI assistants to access website analytics data through Clarity's API.
+This is a Model Context Protocol (MCP) server for the Microsoft Clarity data export API. It allows you to fetch analytics data from Clarity using Claude for Desktop or other MCP-compatible clients.
 
-## Key Features
+## Features
 
-- **Fast analytics access**: Get website traffic data with customizable dimensions
-- **LLM-friendly**: Retrieve specific metrics like browser usage, device types, engagement, etc.
-- **Built-in limitations handling**: Respects API rate limiting and tracks usage
+- Query Microsoft Clarity analytics data through a simple interface
+- Filter by up to 3 dimensions (Browser, Device, Country/Region, OS, etc.)
+- Retrieve various metrics (Scroll Depth, Engagement Time, Traffic, etc.)
+- Seamlessly integrates with Claude for Desktop
 
-## Use Cases
+## Setup and Installation
 
-- **Website traffic analysis**: Get insights about website visitors
-- **User behavior understanding**: Access engagement metrics and identify issues
-- **Analytics reporting**: Generate reports from Clarity data
+### Prerequisites
 
-## Example config
+- Node.js v16 or higher
+- A Microsoft Clarity account and API token
+- Claude for Desktop (or other MCP client)
+
+### Installation
+
+#### Option 1: Install via npm (recommended)
+
+You can install and run this package directly using npm:
+
+```bash
+# Install globally
+npm install -g @microsoft/clarity-mcp-server
+
+# Run the server
+clarity-mcp-server
+```
+
+#### Option 2: Run with npx without installing
+
+You can run the server directly using npx without installing:
+
+```bash
+npx @microsoft/clarity-mcp-server
+```
+
+With either option, you can provide your Clarity API token using the `--clarity_api_token` parameter:
+
+```bash
+npx @microsoft/clarity-mcp-server --clarity_api_token=your-token-here
+```
+
+#### Option 3: Manual Installation
+
+1. Clone or download this repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Build the TypeScript code:
+   ```
+   npm run build
+   ```
+4. Run the server:
+   ```
+   npm start
+   ```
+
+## Configuration
+
+You can provide the [Clarity data export API](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api) token in two ways:
+
+1. **Command Line Arguments**:
+   ```bash
+   npx @microsoft/clarity-mcp-server --clarity_api_token=your-token
+   ```
+
+2. **Tool Parameters**:
+   - Provide `token` as a parameter when calling the `get-clarity-data` tool
+
+## Running with Claude for Desktop
+
+### Option 1: Using VS Code and MCP Configuration
+
+1. Open the project folder in VS Code
+2. Edit the `.vscode/mcp.json` file and set your credentials:
+   ```json
+   {
+     "servers": {
+       "@microsoft/clarity-mcp-server": {
+         "type": "stdio",
+         "command": "npx",
+         "args": ["@microsoft/clarity-mcp-server", "--clarity_api_token=your-api-token-here"]
+       }
+     }
+   }
+   ```
+
+3. Launch Claude for Desktop
+
+Claude for Desktop should automatically detect the server through the VS Code integration.
+
+### Option 2: Manual Configuration
+
+To manually configure Claude for Desktop to use this server:
+
+1. Open your Claude for Desktop configuration file:
+   - **Windows**: `%AppData%\Claude\claude_desktop_config.json`
+   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+2. Add the following configuration:
 
 ```json
 {
   "mcpServers": {
-    "clarity-data-export": {
+    "@microsoft/clarity-mcp-server": {
       "command": "npx",
-      "args": ["@microsoft/clarity-mcp-server", "--token=YOUR_API_TOKEN", "--projectId=YOUR_PROJECT_ID"]
+      "args": [
+        "@microsoft/clarity-mcp-server",
+        "--clarity_api_token=your-api-token-here"
+      ]
     }
   }
 }
 ```
 
-## Installation in VS Code
+3. Save the configuration file and restart Claude for Desktop
 
-Install the Clarity MCP server in VS Code using the VS Code CLI:
+## Using the Server
 
-```bash
-code --add-mcp '{"name":"clarity-data-export","command":"npx","args":["@microsoft/clarity-mcp-server","--token=YOUR_API_TOKEN","--projectId=YOUR_PROJECT_ID"]}'
-```
+When using Claude with this server configured, you can ask it to fetch Clarity data. For example:
 
-## Installation via npm
+"Can you fetch my Clarity data for the last day, filtered by Browser and showing Traffic metrics?"
 
-```bash
-npm install -g @microsoft/clarity-mcp-server
-```
+Claude will then prompt you to run the `get-clarity-data` tool, which requires:
+- `numOfDays`: Number of days to retrieve (1-3)
+- `dimensions`: Array of dimensions to filter by (optional)
+- `metrics`: Array of metrics to retrieve (optional)
 
-Then run using:
+If you haven't configured your credentials via command-line arguments, you'll also need to provide:
+- `token`: Your Clarity API token
 
-```bash
-clarity-mcp --token=YOUR_API_TOKEN --projectId=YOUR_PROJECT_ID
-```
+## API Token
 
-## CLI Options
+### Getting Your API Token
 
-The Clarity MCP server supports the following command-line options:
+To generate an API token:
 
-- `-t, --token`: Microsoft Clarity API token (required)
-- `-p, --projectId`: Microsoft Clarity Project ID (optional)
-- `-h, --help`: Display help message
-
-## Server Tools
-
-### Website Analytics Tools
-
-- **get-traffic**
-  - Description: Get traffic data from Microsoft Clarity
-  - Parameters:
-    - `days`: Number of days (1-3) to retrieve data for
-    - `dimensions`: (Optional) Up to 3 dimensions to break down insights
-
-- **get-metrics**
-  - Description: Get specific metrics from Microsoft Clarity
-  - Parameters:
-    - `days`: Number of days (1-3) to retrieve data for
-    - `metrics`: Metric to retrieve data for (Traffic, Popular Pages, Browser, etc.)
-    - `dimensions`: (Optional) Up to 3 dimensions to break down insights
-
-- **get-api-info**
-  - Description: Get information about Microsoft Clarity API limits and status
-  - Parameters: None
+1. Go to your Clarity project
+2. Select Settings -> Data Export -> Generate new API token
+3. Provide a descriptive name for the token
+4. Save the generated token securely
 
 ## Limitations
 
-- Maximum of 10 API requests are allowed per project per day (Microsoft Clarity limitation)
+- Maximum of 10 API requests are allowed per project per day
 - Data retrieval is confined to the previous 1 to 3 days
 - Maximum of three dimensions can be passed in a single request
 - The response is limited to 1,000 rows and can't be paginated
 
-## Programmatic usage
-
-```typescript
-import { createServer } from '@microsoft/clarity-mcp-server';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-
-// Create server with your token
-const server = createServer({
-  token: 'YOUR_API_TOKEN',
-  projectId: 'YOUR_PROJECT_ID'
-});
-
-// Connect using stdio transport
-const transport = new StdioServerTransport();
-server.connect(transport);
-```
-
 ## License
 
-ISC
+MIT
