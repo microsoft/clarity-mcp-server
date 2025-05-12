@@ -19,7 +19,7 @@ This is a Model Context Protocol (MCP) server for the Microsoft Clarity data exp
 
 ### Installation
 
-#### Option 1: Install via npm (recommended)
+#### Option 1: Install via [npm](https://www.npmjs.com/package/@microsoft/clarity-mcp-server) (recommended)
 
 You can install and run this package directly using npm:
 
