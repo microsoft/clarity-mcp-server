@@ -1,5 +1,7 @@
 # Microsoft Clarity Data Export MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@microsoft/clarity-mcp-server)](https://smithery.ai/server/@microsoft/clarity-mcp-server)
+
 This is a Model Context Protocol (MCP) server for the Microsoft Clarity data export API. It allows you to fetch analytics data from Clarity using Claude for Desktop or other MCP-compatible clients.
 
 ## Features
@@ -60,6 +62,14 @@ npx @microsoft/clarity-mcp-server --clarity_api_token=your-token-here
    ```
    npm start
    ```
+
+### Installing via Smithery
+
+To install Microsoft Clarity Data Export Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@microsoft/clarity-mcp-server):
+
+```bash
+npx -y @smithery/cli install @microsoft/clarity-mcp-server --client claude
+```
 
 ## Configuration
 
