@@ -1,7 +1,7 @@
 {
   "name": "@microsoft/clarity-mcp-server",
   "version": "1.0.1",
-  "description": "MCP Server for Microsoft Clarity based on data export API",
+  "description": "MCP Server to fetch Microsoft Clarity analytics data based on data export API",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
