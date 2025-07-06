@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/microsoft-clarity-mcp-server-badge.png)](https://mseep.ai/app/microsoft-clarity-mcp-server)
+
 # Microsoft Clarity Data Export MCP Server
 
 This is a Model Context Protocol (MCP) server for the Microsoft Clarity data export API. It allows you to fetch analytics data from Clarity using Claude for Desktop or other MCP-compatible clients.
