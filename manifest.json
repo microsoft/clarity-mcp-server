@@ -1,0 +1,33 @@
+{
+  "dxt_version": "0.1",
+  "name": "@microsoft/clarity-mcp-server",
+  "version": "1.0.1",
+  "description": "MCP Server to fetch Microsoft Clarity analytics data based on data export API",
+  "long_description": "This extension sets up a server that connects to Microsoft Clarity’s data export API to retrieve analytics data. It allows for real-time and batch data synchronization with external platforms or analytics tools, using a configurable token for authentication. It supports extensibility through command-line arguments and environment configuration.",
+  "author": {
+    "name": "Microsoft"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/dist/index.js"
+      ],
+      "env": {
+     "CLARITY_API_TOKEN": "${user_config.CLARITY_API_TOKEN}"
+      }
+    }
+  },
+  "user_config": {
+    "CLARITY_API_TOKEN": {
+      "type": "string",
+      "title": "API Token",
+      "description": "Provide your API token for Microsoft Clarity",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "license": "MIT"
+}

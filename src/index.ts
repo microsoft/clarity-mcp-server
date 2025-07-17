@@ -10,16 +10,15 @@ const getConfigValue = (name: string, fallback?: string): string | undefined => 
     return commandArg.split('=')[1];
   }
   
-  // Then check environment variables
-  if (process.env[name] || process.env[name.toUpperCase()]) {
-    return process.env[name] || process.env[name.toUpperCase()];
+  // Check environment variables
+  const envValue = process.env[name.toUpperCase()] || process.env[name];
+  if (envValue) {
+    return envValue;
   }
   
   return fallback;
 };
 
-// Get configuration
-const CLARITY_API_TOKEN = getConfigValue('clarity_api_token');
 
 // Create server instance
 const server = new McpServer({
@@ -71,8 +70,7 @@ const AVAILABLE_DIMENSIONS = [
 async function fetchClarityData(
   token: string, 
   numOfDays: number, 
-  dimensions: string[] = [],
-  context?: string
+  dimensions: string[] = []
 ): Promise<any> {
   try {
     // Build parameters for the API request
@@ -84,16 +82,8 @@ async function fetchClarityData(
       params.append(`dimension${index + 1}`, dim);
     });
     
-    // Add context if provided
-    if (context) {
-      params.append("context", context);
-    }
-
-    // Add source parameter to indicate this is from MCP
-    params.append("src", "mcp");
-    
     // Make the API request
-    const url = `${API_BASE_URL}?${params.toString()}`;
+    const url = `${API_BASE_URL}?${params.toString()}&src=mcp`;
     console.error(`Making request to: ${url}`);
     
     const response = await fetch(url, {
@@ -124,18 +114,11 @@ server.tool(
     dimensions: z.array(z.string()).optional().describe("Up to 3 dimensions to filter by (Browser, Device, Country/Region, OS, Source, Medium, Campaign, Channel, URL)"),
     metrics: z.array(z.string()).optional().describe("Metrics to retrieve (Scroll Depth, Engagement Time, Traffic, Popular Pages, Browser, Device, OS, Country/Region, etc.)"),
     token: z.string().optional().describe("Your Clarity API token (optional if provided via environment or command line)"),
-    context: z.string().optional().describe("Context about what the user was asking about"),
   },
-  async ({ numOfDays, dimensions = [], metrics = [], token, context }) => {
+  async ({ numOfDays, dimensions = [], metrics = [], token }) => {
     // Use provided token or fallback to environment/command-line variables
-    const finalToken = token || CLARITY_API_TOKEN;
-    
-    let validatedContext = context;
-    if (context && context.length > 1024) {
-      validatedContext = context.substring(0, 1024);
-    }
-
-    // Check if we have the necessary credentials
+    // const finalToken = token || CLARITY_API_TOKEN;
+const finalToken = token || getConfigValue('clarity_api_token') || getConfigValue('CLARITY_API_TOKEN');    // Check if we have the necessary credentials
     if (!finalToken) {
       return {
         content: [
@@ -152,8 +135,9 @@ server.tool(
     if (filteredDimensions.length < dimensions.length) {
       console.warn("Some dimensions were invalid and have been filtered out");
     }
+
     // Fetch data from Clarity API
-    const data = await fetchClarityData(finalToken, numOfDays, filteredDimensions, validatedContext);
+    const data = await fetchClarityData(finalToken, numOfDays, filteredDimensions);
 
     // Check for errors
     if (data.error) {
@@ -195,7 +179,7 @@ server.tool(
 // Main function
 async function main() {
   // Log configuration status
-  if (CLARITY_API_TOKEN) {
+ if (getConfigValue('clarity_api_token') || getConfigValue('CLARITY_API_TOKEN')) {
     console.error("Clarity API token configured via environment/command-line");
   } else {
     console.error("No Clarity API token configured, it must be provided with each request");

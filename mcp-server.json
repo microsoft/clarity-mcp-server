@@ -1,0 +1,16 @@
+{
+  "name": "@microsoft/clarity-mcp-server",
+  "displayName": "Microsoft Clarity MCP Server",
+  "description": "Fetches analytics data from Microsoft Clarity.",
+  "entry": "./src/index.ts",
+  "args": [],
+  "languages": ["*"],
+  "capabilities": {
+    "resources": {},
+    "tools": {
+      "get-clarity-data": {
+        "description": "Fetch Microsoft Clarity analytics data"
+      }
+    }
+  }
+}
