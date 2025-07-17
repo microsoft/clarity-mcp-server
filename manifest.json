@@ -1,0 +1,32 @@
+{
+  "dxt_version": "0.1",
+  "name": "@microsoft/clarity-mcp-server",
+  "version": "1.0.5",
+  "description": "MCP Server for Microsoft Clarity based on data export API",
+  "author": {
+    "name": "Microsoft"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/dist/index.js"
+      ],
+      "env": {
+        "CLARITY_API_TOKEN": "${user_config.CLARITY_API_TOKEN}"
+      }
+    }
+  },
+  "user_config": {
+    "CLARITY_API_TOKEN": {
+      "type": "string",
+      "title": "API Token",
+      "description": "Provide your API token for Microsoft Clarity",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "license": "MIT"
+}
