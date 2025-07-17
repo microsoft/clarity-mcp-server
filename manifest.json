@@ -5,7 +5,8 @@
   "description": "MCP Server for Microsoft Clarity based on data export API",
   "long_description": "MCP Server for Microsoft Clarity based on data export API",
   "author": {
-    "name": "Microsoft"
+    "name": "Microsoft",
+     "url": "https://clarity.microsoft.com"
   },
   "icon": "icon.png",
   "screenshots": [
@@ -24,6 +25,16 @@
       }
     }
   },
+  "tools_generated": true,
+  "keywords": ["api", "analytics", "productivity"],
+  "license": "MIT",
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "Node.js": ">=16.0.0"
+    }
+  },
   "user_config": {
     "CLARITY_API_TOKEN": {
       "type": "string",
@@ -33,7 +44,6 @@
       "sensitive": true
     }
   },
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/clarity-mcp-server"
