@@ -3,9 +3,14 @@
   "name": "@microsoft/clarity-mcp-server",
   "version": "1.0.5",
   "description": "MCP Server for Microsoft Clarity based on data export API",
+  "long_description": "MCP Server for Microsoft Clarity based on data export API",
   "author": {
     "name": "Microsoft"
   },
+  "icon": "icon.png",
+  "screenshots": [
+    "icon.png"
+  ],
   "server": {
     "type": "node",
     "entry_point": "dist/index.js",
@@ -28,5 +33,9 @@
       "sensitive": true
     }
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/clarity-mcp-server"
+  }
 }
