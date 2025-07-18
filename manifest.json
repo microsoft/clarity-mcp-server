@@ -1,14 +1,15 @@
 {
   "dxt_version": "0.1",
   "name": "@microsoft/clarity-mcp-server",
+  "display_name": "Microsoft Clarity MCP Server",
   "version": "1.0.5",
-  "description": "Retrieve real-time user behavior data for Clarity by integrating its analytics export API with the Model Context Protocol (MCP) ecosystem",
-  "long_description": "The @microsoft/clarity-mcp-server generates a comprehensive Traffic Overview (total sessions, bot sessions, unique users, pages per session), User Engagement (average scroll depth, total time, active time), and Audience Insights (browser, device, and operating system data). This server is ideal for automating Clarity analytics, powering AI-driven insights, and embedding user behavior data into observability pipelines.",
+  "description": "MCP Server for Microsoft Clarity based on data export API",
+  "long_description": "This extension allows Claude to interact with Microsoft Clarity, enabling it to read your project analytics data using Clarity's data export API under the hood",
   "author": {
     "name": "Microsoft",
-     "url": "https://clarity.microsoft.com"
+    "url": "https://clarity.microsoft.com"
   },
-   "repository": {
+  "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/clarity-mcp-server"
   },
@@ -16,9 +17,6 @@
   "documentation": "https://github.com/microsoft/clarity-mcp-server",
   "support": "https://github.com/microsoft/clarity-mcp-server/issues",
   "icon": "icon.png",
-  "screenshots": [
-    "icon.png"
-  ],
   "server": {
     "type": "node",
     "entry_point": "dist/index.js",
@@ -28,36 +26,45 @@
         "${__dirname}/dist/index.js"
       ],
       "env": {
-        "CLARITY_API_TOKEN": "${user_config.CLARITY_API_TOKEN}"
+        "CLARITY_API_TOKEN": "${user_config.api_token}"
       }
     }
   },
   "tools": [
     {
       "name": "get_clarity_data",
-      "description": "Retrieve and analyze Microsoft Clarity analytics data"
-    }
-  ],
-  "prompts": [
-    {
-      "name": "get_clarity_insights",
-      "description": "Fetch Clarity analytics data using the MCP server.",
-      "arguments": ["days", "dimensions", "metrics"],
-      "text": "Fetch Clarity data for the last ${arguments.days} day(s), filtered by ${arguments.dimensions}, with the following metrics: ${arguments.metrics}."
+      "description": "Fetch Microsoft Clarity analytics data"
     }
   ],
   "tools_generated": false,
-  "keywords": ["clarity", "api", "analytics", "behavior-analytics-tools", "heatmaps", "session-recordings", "mcp", "data insights", "insights", "model-context-protocol", "ai", "agent"],
+  "keywords": [
+    "clarity",
+    "api",
+    "analytics",
+    "behavior-analytics-tools",
+    "heatmaps",
+    "session-recordings",
+    "mcp",
+    "data insights",
+    "insights",
+    "model-context-protocol",
+    "ai",
+    "agent"
+  ],
   "license": "MIT",
   "compatibility": {
     "claude_desktop": ">=0.10.0",
-    "platforms": ["darwin", "win32", "linux"],
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
     "runtimes": {
-      "Node.js": ">=16.0.0"
+      "node": ">=16.0.0"
     }
   },
   "user_config": {
-    "CLARITY_API_TOKEN": {
+    "api_token": {
       "type": "string",
       "title": "Clarity API Token",
       "description": "Provide your Clarity data export API token",
