@@ -2,12 +2,19 @@
   "dxt_version": "0.1",
   "name": "@microsoft/clarity-mcp-server",
   "version": "1.0.5",
-  "description": "MCP Server for Microsoft Clarity based on data export API",
-  "long_description": "MCP Server for Microsoft Clarity based on data export API",
+  "description": "Retrieve real-time user behavior data for Clarity by integrating its analytics export API with the Model Context Protocol (MCP) ecosystem",
+  "long_description": "The @microsoft/clarity-mcp-server generates a comprehensive Traffic Overview (total sessions, bot sessions, unique users, pages per session), User Engagement (average scroll depth, total time, active time), and Audience Insights (browser, device, and operating system data). This server is ideal for automating Clarity analytics, powering AI-driven insights, and embedding user behavior data into observability pipelines.",
   "author": {
     "name": "Microsoft",
      "url": "https://clarity.microsoft.com"
   },
+   "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/clarity-mcp-server"
+  },
+  "homepage": "https://clarity.microsoft.com",
+  "documentation": "https://github.com/microsoft/clarity-mcp-server",
+  "support": "https://github.com/microsoft/clarity-mcp-server/issues",
   "icon": "icon.png",
   "screenshots": [
     "icon.png"
@@ -25,8 +32,22 @@
       }
     }
   },
-  "tools_generated": true,
-  "keywords": ["api", "analytics", "productivity"],
+  "tools": [
+    {
+      "name": "get_clarity_data",
+      "description": "Retrieve and analyze Microsoft Clarity analytics data"
+    }
+  ],
+  "prompts": [
+    {
+      "name": "get_clarity_insights",
+      "description": "Fetch Clarity analytics data using the MCP server.",
+      "arguments": ["days", "dimensions", "metrics"],
+      "text": "Fetch Clarity data for the last ${arguments.days} day(s), filtered by ${arguments.dimensions}, with the following metrics: ${arguments.metrics}."
+    }
+  ],
+  "tools_generated": false,
+  "keywords": ["clarity", "api", "analytics", "behavior-analytics-tools", "heatmaps", "session-recordings", "mcp", "data insights", "insights", "model-context-protocol", "ai", "agent"],
   "license": "MIT",
   "compatibility": {
     "claude_desktop": ">=0.10.0",
@@ -38,14 +59,10 @@
   "user_config": {
     "CLARITY_API_TOKEN": {
       "type": "string",
-      "title": "API Token",
-      "description": "Provide your API token for Microsoft Clarity",
+      "title": "Clarity API Token",
+      "description": "Provide your Clarity data export API token",
       "required": true,
       "sensitive": true
     }
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/microsoft/clarity-mcp-server"
   }
 }
