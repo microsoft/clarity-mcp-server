@@ -60,6 +60,15 @@ npx @microsoft/clarity-mcp-server --clarity_api_token=your-token-here
    ```
    npm start
    ```
+#### Option 4: Install via DXT 
+
+**For Claude AI:**  
+To install the Microsoft Clarity MCP Server extension in Claude’s DXT environment:
+
+1. Open **Claude Desktop**.
+2. Navigate to **File → Settings → Extensions**. 
+3. Search for **Microsoft Clarity MCP Server**.
+4. Click **Install** to add the extension.
 
 ## Configuration
 
