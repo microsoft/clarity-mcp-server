@@ -60,15 +60,14 @@ npx @microsoft/clarity-mcp-server --clarity_api_token=your-token-here
    ```
    npm start
    ```
-#### Option 4: Install via DXT 
-
-**For Claude AI:**  
+#### Option 4: Install from Claude's gallery
 To install the Microsoft Clarity MCP Server extension in Claude’s DXT environment:
 
 1. Open **Claude Desktop**.
 2. Navigate to **File → Settings → Extensions**. 
 3. Search for **Microsoft Clarity MCP Server**.
 4. Click **Install** to add the extension.
+5. Configure your API Token.
 
 ## Configuration
 
@@ -137,7 +136,7 @@ If you haven't configured your credentials via command-line arguments, you'll al
 To generate an API token:
 
 1. Go to your Clarity project
-2. Select Settings -> Data Export -> Generate new API token
+2. Select Settings → Data Export → Generate new API token
 3. Provide a descriptive name for the token
 4. Save the generated token securely
 
