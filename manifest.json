@@ -4,10 +4,11 @@
   "display_name": "Microsoft Clarity MCP Server",
   "version": "1.0.5",
   "description": "MCP Server for Microsoft Clarity based on data export API",
-  "long_description": "This extension allows Claude to interact with Microsoft Clarity, enabling it to read your project analytics data using Clarity's data export API under the hood",
+  "long_description": "This extension enables integration between AI systems and Microsoft Clarity, providing access to project analytics data via Clarity's data export API.",
   "author": {
     "name": "Microsoft",
-    "url": "https://clarity.microsoft.com"
+    "url": "https://clarity.microsoft.com",
+    "email": "clarityms@microsoft.com"
   },
   "repository": {
     "type": "git",
