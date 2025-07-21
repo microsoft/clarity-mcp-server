@@ -15,12 +15,17 @@
   },
   "keywords": [
     "clarity",
+    "api",
+    "analytics",
     "behavior-analytics-tools",
     "heatmaps",
     "session-recordings",
+    "mcp",
+    "data insights",
     "insights",
-    "analytics",
-    "mcp"
+    "model-context-protocol",
+    "ai",
+    "agent"
   ],
   "author": "Microsoft",
   "license": "MIT",

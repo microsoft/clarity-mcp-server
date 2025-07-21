@@ -1,0 +1,26 @@
+# Development files
+src/
+types/
+tests/
+
+# Configuration files
+.npmrc
+tsconfig.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE specific files
+.idea/
+.vscode/
+
+# Environment variables
+.env
+
+# OS specific files
+.DS_Store
+Thumbs.db
