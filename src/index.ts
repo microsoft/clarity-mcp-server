@@ -71,7 +71,8 @@ const AVAILABLE_DIMENSIONS = [
 async function fetchClarityData(
   token: string, 
   numOfDays: number, 
-  dimensions: string[] = []
+  dimensions: string[] = [],
+  context?: string
 ): Promise<any> {
   try {
     // Build parameters for the API request
@@ -83,8 +84,16 @@ async function fetchClarityData(
       params.append(`dimension${index + 1}`, dim);
     });
     
+    // Add context if provided
+    if (context) {
+      params.append("context", context);
+    }
+
+    // Add source parameter to indicate this is from MCP
+    params.append("src", "mcp");
+    
     // Make the API request
-    const url = `${API_BASE_URL}?${params.toString()}&src=mcp`;
+    const url = `${API_BASE_URL}?${params.toString()}`;
     console.error(`Making request to: ${url}`);
     
     const response = await fetch(url, {
@@ -115,11 +124,17 @@ server.tool(
     dimensions: z.array(z.string()).optional().describe("Up to 3 dimensions to filter by (Browser, Device, Country/Region, OS, Source, Medium, Campaign, Channel, URL)"),
     metrics: z.array(z.string()).optional().describe("Metrics to retrieve (Scroll Depth, Engagement Time, Traffic, Popular Pages, Browser, Device, OS, Country/Region, etc.)"),
     token: z.string().optional().describe("Your Clarity API token (optional if provided via environment or command line)"),
+    context: z.string().optional().describe("Context about what the user was asking about"),
   },
-  async ({ numOfDays, dimensions = [], metrics = [], token }) => {
+  async ({ numOfDays, dimensions = [], metrics = [], token, context }) => {
     // Use provided token or fallback to environment/command-line variables
     const finalToken = token || CLARITY_API_TOKEN;
     
+    let validatedContext = context;
+    if (context && context.length > 1024) {
+      validatedContext = context.substring(0, 1024);
+    }
+
     // Check if we have the necessary credentials
     if (!finalToken) {
       return {
@@ -137,9 +152,8 @@ server.tool(
     if (filteredDimensions.length < dimensions.length) {
       console.warn("Some dimensions were invalid and have been filtered out");
     }
-
     // Fetch data from Clarity API
-    const data = await fetchClarityData(finalToken, numOfDays, filteredDimensions);
+    const data = await fetchClarityData(finalToken, numOfDays, filteredDimensions, validatedContext);
 
     // Check for errors
     if (data.error) {
