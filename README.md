@@ -2,6 +2,10 @@
 
 This is a Model Context Protocol (MCP) server for the Microsoft Clarity data export API. It allows you to fetch analytics data from Clarity using Claude for Desktop or other MCP-compatible clients.
 
+<a href="https://glama.ai/mcp/servers/@microsoft/clarity-mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@microsoft/clarity-mcp-server/badge" alt="Clarity Data Export Server MCP server" />
+</a>
+
 ## Features
 
 - Query Microsoft Clarity analytics data through a simple interface
