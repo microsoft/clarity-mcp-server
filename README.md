@@ -60,13 +60,20 @@ npx @microsoft/clarity-mcp-server --clarity_api_token=your-token-here
    ```
    npm start
    ```
-#### Option 4: Install from Claude's gallery
-To install the Microsoft Clarity MCP Server extension in Claude’s DXT environment:
+### Extension/Plugin Installation 
 
-1. Open **Claude Desktop**.
-2. Navigate to **File → Settings → Extensions**. 
-3. Search for **Microsoft Clarity MCP Server**.
-4. Click **Install** to add the extension.
+#### Visual Studio Code Extension
+
+[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install+Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522clarity-server%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522%2540microsoft%252Fclarity-mcp-server%2522%255D%257D) 
+
+Click the button above to install the Microsoft Clarity MCP server directly in Visual Studio Code.
+
+#### Claude Desktop Plugin
+Install from Claude's extension gallery:
+1. Open Claude Desktop.
+2. Navigate to File → Settings → Extensions. 
+3. Search for Microsoft Clarity MCP Server.
+4. Click Install to add the extension.
 5. Configure your API Token.
 
 ## Configuration
