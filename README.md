@@ -70,11 +70,12 @@ Click the button above to install the Microsoft Clarity MCP server directly in V
 
 #### Claude Desktop Plugin
 Install from Claude's extension gallery:
-1. Open Claude Desktop.
-2. Navigate to File → Settings → Extensions. 
-3. Search for Microsoft Clarity MCP Server.
-4. Click Install to add the extension.
-5. Configure your API Token.
+1. Open **Claude Desktop**.
+2. Navigate to **File → Settings → Extensions**. 
+3. Search for **Microsoft Clarity MCP Server**.
+4. Click **Install** to add the extension.
+5. Configure your **API Token**.<br>
+Follow the instructions in the [API Token section](https://github.com/microsoft/clarity-mcp-server#api-token) to retrieve and set it up correctly.
 
 ## Configuration
 
