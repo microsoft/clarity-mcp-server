@@ -94,7 +94,7 @@ async function fetchClarityData(
     params.append("src", "mcp");
 
     // Make the API request
-    const url = `${API_BASE_URL}?${params.toString()}&src=mcp`;
+    const url = `${API_BASE_URL}?${params.toString()}`;
     console.error(`Making request to: ${url}`);
 
     const response = await fetch(url, {
