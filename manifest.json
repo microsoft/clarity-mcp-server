@@ -1,7 +1,7 @@
 {
   "dxt_version": "0.1",
   "name": "@microsoft/clarity-mcp-server",
-  "display_name": "Microsoft Clarity MCP Server",
+  "display_name": "Microsoft Clarity",
   "version": "1.0.5",
   "description": "MCP Server for Microsoft Clarity based on data export API",
   "long_description": "This extension enables integration between AI systems and Microsoft Clarity, providing access to project analytics data via Clarity's data export API.",
