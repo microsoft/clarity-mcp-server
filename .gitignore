@@ -16,10 +16,7 @@ yarn-error.log*
 
 # IDE specific files
 .idea/
-.vscode/*
-!.vscode/mcp.json
-!.vscode/launch.json
-!.vscode/tasks.json
+!.vscode/
 
 # OS specific files
 .DS_Store

@@ -7,6 +7,10 @@ tests/
 .npmrc
 tsconfig.json
 
+# Documentation files
+docs/
+*.md
+
 # Logs
 logs/
 *.log

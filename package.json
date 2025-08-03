@@ -1,9 +1,28 @@
 {
   "name": "@microsoft/clarity-mcp-server",
-  "version": "1.0.1",
-  "description": "MCP Server to fetch Microsoft Clarity analytics data based on data export API",
-  "main": "dist/index.js",
+  "version": "1.0.5",
+  "description": "MCP Server for Microsoft Clarity based on data export API",
+  "author": "Microsoft",
+  "license": "MIT",
   "type": "module",
+  "main": "dist/index.js",
+  "homepage": "https://clarity.microsoft.com/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/clarity-mcp-server"
+  },
+  "keywords": [
+    "clarity",
+    "behavior-analytics-tools",
+    "heatmaps",
+    "session-recordings",
+    "insights",
+    "analytics",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "agents"
+  ],
   "bin": {
     "clarity-mcp-server": "./dist/cli.js"
   },
@@ -13,22 +32,6 @@
     "dev": "tsc && node dist/index.js",
     "prepublishOnly": "npm run build"
   },
-  "keywords": [
-    "clarity",
-    "api",
-    "analytics",
-    "behavior-analytics-tools",
-    "heatmaps",
-    "session-recordings",
-    "mcp",
-    "data insights",
-    "insights",
-    "model-context-protocol",
-    "ai",
-    "agent"
-  ],
-  "author": "Microsoft",
-  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.2",
     "zod": "^3.22.4"
