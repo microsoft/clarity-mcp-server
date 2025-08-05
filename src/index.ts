@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import pkg from "../package.json" with { type: "json" };
 
 // Get configuration from environment variables or command-line arguments
 const getConfigValue = (name: string, fallback?: string): string | undefined => {
@@ -9,12 +10,12 @@ const getConfigValue = (name: string, fallback?: string): string | undefined => 
   if (commandArg) {
     return commandArg.split('=')[1];
   }
-  
+
   // Then check environment variables
   if (process.env[name] || process.env[name.toUpperCase()]) {
     return process.env[name] || process.env[name.toUpperCase()];
   }
-  
+
   return fallback;
 };
 
@@ -23,8 +24,8 @@ const CLARITY_API_TOKEN = getConfigValue('clarity_api_token');
 
 // Create server instance
 const server = new McpServer({
-  name: "@microsoft/clarity-mcp-server",
-  version: "1.0.0",
+  name: pkg.name,
+  version: pkg.version,
   capabilities: {
     resources: {},
     tools: {},
@@ -69,8 +70,8 @@ const AVAILABLE_DIMENSIONS = [
 
 // Helper function to make API requests
 async function fetchClarityData(
-  token: string, 
-  numOfDays: number, 
+  token: string,
+  numOfDays: number,
   dimensions: string[] = [],
   context?: string
 ): Promise<any> {
@@ -78,12 +79,12 @@ async function fetchClarityData(
     // Build parameters for the API request
     const params = new URLSearchParams();
     params.append("numOfDays", numOfDays.toString());
-    
+
     // Add dimensions if specified (maximum 3 allowed)
     dimensions.slice(0, 3).forEach((dim, index) => {
       params.append(`dimension${index + 1}`, dim);
     });
-    
+
     // Add context if provided
     if (context) {
       params.append("context", context);
@@ -91,11 +92,11 @@ async function fetchClarityData(
 
     // Add source parameter to indicate this is from MCP
     params.append("src", "mcp");
-    
+
     // Make the API request
     const url = `${API_BASE_URL}?${params.toString()}`;
     console.error(`Making request to: ${url}`);
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -129,7 +130,7 @@ server.tool(
   async ({ numOfDays, dimensions = [], metrics = [], token, context }) => {
     // Use provided token or fallback to environment/command-line variables
     const finalToken = token || CLARITY_API_TOKEN;
-    
+
     let validatedContext = context;
     if (context && context.length > 1024) {
       validatedContext = context.substring(0, 1024);
@@ -152,6 +153,7 @@ server.tool(
     if (filteredDimensions.length < dimensions.length) {
       console.warn("Some dimensions were invalid and have been filtered out");
     }
+
     // Fetch data from Clarity API
     const data = await fetchClarityData(finalToken, numOfDays, filteredDimensions, validatedContext);
 
@@ -171,8 +173,8 @@ server.tool(
     let formattedResult = data;
     if (metrics && metrics.length > 0) {
       // Filter the metrics if requested (case-insensitive match for user convenience)
-      formattedResult = data.filter((item: any) => 
-        metrics.some(m => 
+      formattedResult = data.filter((item: any) =>
+        metrics.some(m =>
           item.metricName.toLowerCase() === m.toLowerCase() ||
           item.metricName.replace(/\s+/g, '').toLowerCase() === m.replace(/\s+/g, '').toLowerCase()
         )
@@ -206,7 +208,8 @@ async function main() {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Microsoft Clarity Data Export MCP Server running on stdio");
+
+  console.error("Microsoft Clarity Data Export MCP Server running on stdio...");
 }
 
 // Run the server

@@ -1,11 +1,10 @@
 # Dependency directories
 node_modules/
 
-# Environment variables
-.env
-
 # Build output
 build/
+dist/
+*.dxt
 
 # Logs
 logs/
@@ -16,10 +15,10 @@ yarn-error.log*
 
 # IDE specific files
 .idea/
-.vscode/*
-!.vscode/mcp.json
-!.vscode/launch.json
-!.vscode/tasks.json
+!.vscode/
+
+# Environment variables
+.env
 
 # OS specific files
 .DS_Store
