@@ -1,4 +1,4 @@
-# Microsoft Clarity Data Export MCP Server
+# Microsoft Clarity MCP Server
 
 This is a Model Context Protocol (MCP) server for the Microsoft Clarity.
 It allows you to access your session recordings, project analytics, and documentation from Clarity using Claude for Desktop or other MCP-compatible clients.
@@ -138,17 +138,25 @@ Just ask naturally and keep each request focused on one thing.
 ### Query Analytics Dashboard
 - <b>Name:</b> `query-analytics-dashboard`
 - <b>Description:</b> Retrieves analytics data and metrics from your project's dashboard using a simplified natural language search query.
-- <b>Example:</b> How many Clarity sessions did we get from Egypt in the past 3 days?
+- <b>Examples:</b>
+  - How many Clarity sessions did we get from Egypt in the past 3 days?
+  - What are the most used browsers in my Clarity project?
+  - Show me traffic metrics from my Clarity project for the last week
 
 ### List Session Recordings
 - <b>Name:</b> `list-session-recordings`
 - <b>Description:</b> Lists your project's session recordings based on a specified filtering criteria. The filters allow you to narrow down the recordings by various fields such as URLs, device types, browser, OS, country, city, and more.
-- <b>Example:</b> List the most recent Clarity sessions occurring on mobile devices.
+- <b>Examples:</b>
+  - List the most recent Clarity sessions from mobile devices
+  - Show the top 5 Clarity sessions with the highest number of user clicks
+  - Get Clarity recordings where users encountered JavaScript errors
 
 ### Query Documentation Resources
 - <b>Name:</b> `query-documentation-resources`
 - <b>Description:</b> Retrieves snippets from Microsoft Clarity documentation to find answers to user questions including step-by-step screenshots for setup guides, features, usage, troubleshooting, and integration instructions.
-- <b>Example:</b> How to track custom events using Microsoft Clarity?
+- <b>Examples:</b>
+  - How to track custom events using Microsoft Clarity?
+  - How many labels can I add to a recording in Microsoft Clarity?
 
 ## API Token
 
