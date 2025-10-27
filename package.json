@@ -33,11 +33,11 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.10.2",
-    "zod": "^3.22.4"
+    "@modelcontextprotocol/sdk": "^1.20.2",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "typescript": "^5.3.3"
+    "@types/node": "^20.19.23",
+    "typescript": "^5.9.3"
   }
 }

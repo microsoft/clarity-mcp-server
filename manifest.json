@@ -34,7 +34,7 @@
   "tools": [
     {
       "name": "list-session-recordings",
-      "description": "List a of Microsoft Clarity session recordings timeline information. Returns metadata including session link, duration, and a timeline of relevant user interactions."
+      "description": "List Microsoft Clarity session recordings timeline information. Returns metadata including session link, duration, and a timeline of relevant user interactions."
     },
     {
       "name": "query-documentation-data",

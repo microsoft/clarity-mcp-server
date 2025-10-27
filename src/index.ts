@@ -68,10 +68,15 @@ server.tool(
     openWorldHint: false
   },
   async ({ filters, sortBy, count }) => {
+    const now = new Date().toISOString();
+
     // Calculate end as now, start as now - numOfDays
-    const endDate = new Date(filters?.date?.end || new Date().toISOString());
-    const startDate = new Date(filters?.date?.start || new Date().toISOString());
-    startDate.setDate(endDate.getDate() - 3 + 1);
+    const endDate = new Date(filters?.date?.end || now);
+    const startDate = new Date(filters?.date?.start || now);
+
+    if (!filters?.date?.start) {
+      startDate.setDate(endDate.getDate() - 2);
+    }
 
     return await listSessionRecordingsAsync(startDate, endDate, filters, sortBy, count);
   }

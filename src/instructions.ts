@@ -167,5 +167,5 @@ Microsoft Clarity documentation provides comprehensive, authoritative answers to
 	- Contribute
 	- Privacy, Terms of Use, Trademarks
 
-The documentation plugin ensures users answer frequently asked questions. for every headline and topic listed in the official Microsoft Clarity documentation, supporting all use cases, troubleshooting, integrations, and advanced features.
+The documentation plugin helps users answer frequently asked questions for every headline and topic listed in the official Microsoft Clarity documentation, supporting all use cases, troubleshooting, integrations, and advanced features.
 `;
