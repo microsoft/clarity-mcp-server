@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/clarity-mcp-server",
-  "version": "1.0.5",
+  "version": "2.0.1",
   "description": "MCP Server for Microsoft Clarity based on data export API",
   "author": "Microsoft",
   "license": "MIT",
@@ -33,11 +33,11 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.10.2",
-    "zod": "^3.22.4"
+    "@modelcontextprotocol/sdk": "^1.20.2",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "typescript": "^5.3.3"
+    "@types/node": "^20.19.23",
+    "typescript": "^5.9.3"
   }
 }
