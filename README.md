@@ -71,7 +71,30 @@ npx @microsoft/clarity-mcp-server --clarity_api_token=your-token-here
 
 [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install+Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522clarity-server%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522%2540microsoft%252Fclarity-mcp-server%2522%255D%257D)
 
-Click the button above to install the Microsoft Clarity MCP server directly in Visual Studio Code.
+1. Click the button above to install the Microsoft Clarity MCP server directly in Visual Studio Code.
+2. Provide Your Clarity API Token.
+
+The Start Server button launches the server, but it requires the token to be set in your environment first.
+
+**Option 1: Temporary (Current Terminal Session Only)**
+
+Run this command to set the token:
+
+```powershell
+cmd /C "set CLARITY_API_TOKEN=YOUR_TOKEN_HERE"
+```
+
+After setting the token, click the Start Server button in VS Code to launch the MCP server.
+
+**Option 2: Permanent**
+
+Run the following command to save the token permanently:
+
+```powershell
+setx CLARITY_API_TOKEN "YOUR_TOKEN_HERE"
+```
+1. Close and reopen VS Code or your terminal after running `setx`.
+2. Click the Start Server button — it will automatically detect your token.
 
 #### Claude Desktop Plugin
 
