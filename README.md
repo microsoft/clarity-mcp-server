@@ -130,6 +130,14 @@ To configure Claude for Desktop to use this server:
 2. Add the configuration shown in the generic example above
 3. Save the configuration file and restart Claude for Desktop
 
+### GitHub Copilot CLI Configuration
+
+To configure GitHub Copilot CLI to use this server:
+
+1. Open your Copilot CLI configuration file at `~/.copilot/mcp-config.json`
+2. Add the configuration shown in the generic example above
+3. Start a new Copilot CLI session
+
 ## Server Usage
 
 The server exposes various tools that you can call from any MCP client.
