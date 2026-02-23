@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/clarity-mcp-server",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "MCP Server for Microsoft Clarity based on data export API",
   "author": "Microsoft",
   "license": "MIT",
