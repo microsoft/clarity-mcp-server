@@ -30,13 +30,13 @@ const server = new McpServer(
   {
     name: pkg.name,
     version: pkg.version,
+  },
+  {
+    instructions: SYSTEM_INSTRUCTIONS_PROMPT,
     capabilities: {
       resources: {},
       tools: {}
     },
-  },
-  {
-    instructions: SYSTEM_INSTRUCTIONS_PROMPT,
   }
 );
 
