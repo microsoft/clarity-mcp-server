@@ -1,15 +1,15 @@
 {
-  "name": "@microsoft/clarity-mcp-server",
-  "version": "2.0.2",
-  "description": "MCP Server for Microsoft Clarity based on data export API",
-  "author": "Microsoft",
+  "name": "clarity-mcp-server-multi",
+  "version": "3.0.0",
+  "description": "Multi-account MCP Server for Microsoft Clarity - query multiple projects by domain name",
+  "author": "Zen Media Social (fork of Microsoft clarity-mcp-server)",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
-  "homepage": "https://clarity.microsoft.com/",
+  "homepage": "https://github.com/zenmediasocial/clarity-mcp-server-multi",
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/clarity-mcp-server"
+    "url": "https://github.com/zenmediasocial/clarity-mcp-server-multi"
   },
   "keywords": [
     "clarity",
@@ -21,7 +21,9 @@
     "mcp",
     "model-context-protocol",
     "ai",
-    "agents"
+    "agents",
+    "multi-account",
+    "multi-project"
   ],
   "bin": {
     "clarity-mcp-server": "./dist/cli.js"

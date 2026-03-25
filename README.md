@@ -1,178 +1,89 @@
-# Microsoft Clarity MCP Server
+# Clarity MCP Server (Multi-Account)
 
-This is a Model Context Protocol (MCP) server for the Microsoft Clarity.
-It allows you to access your session recordings, project analytics, and documentation from Clarity using Claude for Desktop or other MCP-compatible clients.
+A [Model Context Protocol](https://modelcontextprotocol.io) server for Microsoft Clarity that supports **multiple projects** — identified by domain name.
 
-## Key Features
+Fork of [@microsoft/clarity-mcp-server](https://github.com/microsoft/clarity-mcp-server) with multi-account support.
 
-- **Analytics Data Access**: Query your Microsoft Clarity analytics data including traffic metrics, user behavior insights, and performance statistics
-- **Session Recording Retrieval**: Access and analyze session recordings to understand user interactions and identify optimization opportunities
-- **Natural Language Querying**: Ask questions in plain English to get insights from your data - no need to learn complex query syntax or API endpoints
-- **Flexible Data Filtering**: Filter results by various dimensions such as browser, device, country, and many more
-- **Real-Time Data Access**: Fetch the latest analytics data and insights from your Clarity projects on-demand
-- **Documentation Integration**: Get quick answers and guidance from Microsoft Clarity documentation directly within your workflow
-- **Seamless MCP Integration**: Works natively with Claude for Desktop, Visual Studio Code, and other Model Context Protocol (MCP) compatible clients
+## Why?
 
-## Setup and Installation
+The official server supports one API token at a time. If you manage multiple sites with Clarity, you'd need to run separate server instances. This fork lets you configure all your projects in one place and query any of them by domain name.
 
-### Prerequisites
+## Setup
 
-- Node.js v16 or higher
-- A Microsoft Clarity account and API token
-- Any MCP-compatible client (Claude for Desktop, etc.)
-
-### Installation
-
-#### Option 1: Install via npm (recommended)
-
-You can install and run this package directly using npm:
+### 1. Create accounts config
 
 ```bash
-# Install globally
-npm install -g @microsoft/clarity-mcp-server
-
-# Run the server
-clarity-mcp-server
+mkdir -p ~/.clarity-mcp
 ```
 
-#### Option 2: Run with npx without installing
-
-You can run the server directly using npx without installing:
-
-```bash
-npx @microsoft/clarity-mcp-server
+```json
+// ~/.clarity-mcp/accounts.json
+{
+  "default": "mysite.com",
+  "accounts": {
+    "mysite.com": { "token": "your-clarity-api-token-1" },
+    "clientsite.com": { "token": "your-clarity-api-token-2" },
+    "blog.example.org": { "token": "your-clarity-api-token-3" }
+  }
+}
 ```
 
-With either option, you can provide your Clarity API token using the `--clarity_api_token` parameter:
+### 2. Get your API tokens
 
-```bash
-npx @microsoft/clarity-mcp-server --clarity_api_token=your-token-here
-```
+Each Clarity project has its own API token. Get them from the [Clarity Data Export API](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api).
 
-#### Option 3: Manual Installation
-
-1. Clone or download this repository
-2. Install dependencies:
-   ```
-   npm install
-   ```
-3. Build the TypeScript code:
-   ```
-   npm run build
-   ```
-4. Run the server:
-   ```
-   npm run start
-   ```
-
-### Extension/Plugin Installation
-
-#### Visual Studio Code Extension
-
-[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install+Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522clarity-server%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522%2540microsoft%252Fclarity-mcp-server%2522%255D%257D)
-
-Click the button above to install the Microsoft Clarity MCP server directly in Visual Studio Code.
-
-#### Claude Desktop Plugin
-
-Install from Claude's extension gallery:
-
-1. Open **Claude Desktop**
-2. Navigate to **File → Settings → Extensions**
-3. Search for **Microsoft Clarity**
-4. Click **Install** to add the extension
-5. Configure your **API Token**:
-   <br>
-   Follow the instructions in the [API Token section](#api-token) to retrieve and set it up correctly.
-
-## Configuration
-
-You can provide the [Clarity data export API](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api) token in two ways:
-
-1. **Command Line Arguments**:
-   ```bash
-   npx @microsoft/clarity-mcp-server --clarity_api_token=your-token
-   ```
-
-2. **Tool Parameters**:
-   <br>
-   Provide `token` as a parameter when calling the `get-clarity-data` tool
-
-## Configuring MCP Clients
-
-### Generic MCP Client Configuration
-
-MCP clients typically require configuration to connect to the server. Here's a general example of how to configure an MCP client:
+### 3. Configure your MCP client
 
 ```json
 {
   "mcpServers": {
-    "@microsoft/clarity-mcp-server": {
-      "command": "npx",
-      "args": [
-        "@microsoft/clarity-mcp-server",
-        "--clarity_api_token=your-api-token-here"
-      ]
+    "clarity": {
+      "command": "node",
+      "args": ["/path/to/clarity-mcp-server-multi/dist/index.js"]
     }
   }
 }
 ```
 
-The specifics of where and how to add this configuration will depend on your specific MCP client.
+## Usage
 
-### Claude for Desktop Configuration
+### List accounts
+Ask: *"What Clarity accounts are available?"*
 
-To configure Claude for Desktop to use this server:
+### Query a specific site
+Ask: *"Show me session recordings for clientsite.com from the last 3 days"*
 
-1. Open your Claude for Desktop configuration file:
-   - **Windows**: `%AppData%\Claude\claude_desktop_config.json`
-   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-2. Add the configuration shown in the generic example above
-3. Save the configuration file and restart Claude for Desktop
+### Query the default
+Ask: *"How many sessions did we get last week?"* (uses default account)
 
-## Server Usage
+## Tools
 
-The server exposes various tools that you can call from any MCP client.
-Just ask naturally and keep each request focused on one thing.
+| Tool | Description |
+|------|-------------|
+| `list-clarity-accounts` | List all configured accounts and the default |
+| `query-analytics-dashboard` | Natural language analytics queries |
+| `list-session-recordings` | Session recordings with filters |
+| `query-documentation-resources` | Clarity docs search |
 
-### Query Analytics Dashboard
-- <b>Name:</b> `query-analytics-dashboard`
-- <b>Description:</b> Retrieves analytics data and metrics from your project's dashboard using a simplified natural language search query.
-- <b>Examples:</b>
-  - How many Clarity sessions did we get from Egypt in the past 3 days?
-  - What are the most used browsers in my Clarity project?
-  - Show me traffic metrics from my Clarity project for the last week
+All data tools accept an optional `account` parameter (domain name).
 
-### List Session Recordings
-- <b>Name:</b> `list-session-recordings`
-- <b>Description:</b> Lists your project's session recordings based on a specified filtering criteria. The filters allow you to narrow down the recordings by various fields such as URLs, device types, browser, OS, country, city, and more.
-- <b>Examples:</b>
-  - List the most recent Clarity sessions from mobile devices
-  - Show the top 5 Clarity sessions with the highest number of user clicks
-  - Get Clarity recordings where users encountered JavaScript errors
+## Backward Compatible
 
-### Query Documentation Resources
-- <b>Name:</b> `query-documentation-resources`
-- <b>Description:</b> Retrieves snippets from Microsoft Clarity documentation to find answers to user questions including step-by-step screenshots for setup guides, features, usage, troubleshooting, and integration instructions.
-- <b>Examples:</b>
-  - How to track custom events using Microsoft Clarity?
-  - How many labels can I add to a recording in Microsoft Clarity?
+Still works with a single token via CLI arg or env var:
 
-## API Token
+```bash
+node dist/index.js --clarity_api_token=your-token
+# or
+CLARITY_API_TOKEN=your-token node dist/index.js
+```
 
-### Getting Your API Token
+## Config file locations
 
-To generate an API token:
-
-1. Go to your Clarity project
-2. Select Settings → Data Export → Generate new API token
-3. Provide a descriptive name for the token
-4. Save the generated token securely
-
-## Privacy Policy
-
-For information about data privacy and usage, please refer to the [Microsoft Clarity Privacy Policy](https://clarity.microsoft.com/privacy).
+Checked in order:
+1. `--accounts-file=/custom/path.json`
+2. `~/.clarity-mcp/accounts.json`
+3. `~/.config/clarity-mcp/accounts.json`
 
 ## License
 
-This project is licensed under the <b>MIT</b> License.
+MIT
