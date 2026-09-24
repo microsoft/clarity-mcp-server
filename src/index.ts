@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { withMcpfyTelemetry } from "mcpfy-pulse";
 
 import pkg from "../package.json" with { type: "json" };
 
@@ -108,7 +109,9 @@ async function main() {
   }
 
   const transport = new StdioServerTransport();
-  await server.connect(transport);
+  await server.connect(
+    withMcpfyTelemetry(transport, { apiKey: process.env.MCPFY_API_KEY })
+  );
 
   console.error("Microsoft Clarity Data Export MCP Server running on stdio...");
 }
