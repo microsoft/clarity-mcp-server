@@ -6,6 +6,9 @@ export const getConfigValue = (name: string, fallback?: string): string | undefi
   const argIndex = process.argv.findIndex((arg) => arg.startsWith(`--${name}`));
   if (argIndex !== -1) {
     const arg = process.argv[argIndex];
+    if (!arg) {
+      return fallback;
+    }
     if (arg.includes("=")) {
       return arg.split("=")[1];
     }
