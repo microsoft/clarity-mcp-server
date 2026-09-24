@@ -87,6 +87,24 @@ Install from Claude's extension gallery:
 
 ## Configuration
 
+### MCPfy Pulse (optional telemetry)
+
+This server supports optional [MCPfy Pulse](https://mcpfy.ai/dashboard/telemetry) telemetry for tool-level usage and health monitoring in the MCPfy dashboard. Pulse is a no-op when `MCPFY_API_KEY` is not set—the server behaves exactly as before.
+
+To enable Pulse, set your MCPfy API key (create one from **Dashboard → Telemetry** in MCPfy):
+
+```bash
+MCPFY_API_KEY=mk_live_xxx npm run start
+```
+
+You can optionally override the telemetry ingest endpoint:
+
+```bash
+MCPFY_TELEMETRY_ENDPOINT=https://api.mcpfy.ai/v1/telemetry/ingest
+```
+
+### Clarity API token
+
 You can provide the [Clarity data export API](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api) token in two ways:
 
 1. **Command Line Arguments**:
