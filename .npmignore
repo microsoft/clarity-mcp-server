@@ -7,6 +7,14 @@ node_modules/
 .git/
 .gitignore
 
+# MCP build artifacts
+*.dxt
+*.mcpb
+
+# Internal development documentation & scripts
+docs/*
+scripts/*
+
 # Test files
 test/
 *.test.ts
