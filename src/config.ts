@@ -11,7 +11,7 @@
  */
 function getConfigValue(name: string, fallback?: string): string | undefined {
   // Check command line args first (format: --name=value or --name value)
-  const argIndex = process.argv.findIndex((arg) => arg.startsWith(`--${name}`));
+  const argIndex = process.argv.findIndex((arg) => arg.startsWith(`--${name}=`) || arg === `--${name}`);
 
   if (argIndex !== -1) {
     // --name=value format: return the value after the first "="
