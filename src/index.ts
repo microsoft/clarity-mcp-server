@@ -12,15 +12,16 @@ async function main() {
 
   // Log configuration status
   if (CLARITY_API_TOKEN) {
-    console.error("Clarity API token configured via environment/command-line");
-  } else {
-    console.error("No Clarity API token configured, it must be provided with each request");
+    console.error(
+      "Deprecation warning: Data Export API token authentication for MCP is being deprecated.\n" +
+      "Remove CLARITY_API_TOKEN or --clarity_api_token from your configuration and use the login tool to sign in with your Microsoft Clarity account.\n"
+    );
   }
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  console.error("Microsoft Clarity Data Export MCP Server running on stdio...");
+  console.error("Microsoft Clarity MCP Server running on stdio...");
 }
 
 // Run the server
