@@ -1,7 +1,7 @@
 /**
  * Resolves a configuration value from command-line arguments or environment variables.
  *
- * The first matching `--name=value` argument takes precedence, followed by a
+ * The first matching `--name=value` or `--name value` argument takes precedence, followed by a
  * non-empty environment variable matching `name`, then its uppercase equivalent.
  * Empty command-line values are returned as-is; empty environment values are ignored.
  *
@@ -10,16 +10,31 @@
  * @returns The resolved value, or `undefined` when no value or fallback is available.
  */
 function getConfigValue(name: string, fallback?: string): string | undefined {
-  const commandArg = process.argv.find(arg => arg.startsWith(`--${name}=`));
-  if (commandArg) {
-    return commandArg.split('=')[1];
+  // Check command line args first (format: --name=value or --name value)
+  const argIndex = process.argv.findIndex((arg) => arg.startsWith(`--${name}`));
+
+  if (argIndex !== -1) {
+    // --name=value format: return the value after the first "="
+    const arg = process.argv[argIndex];
+    if (arg && arg.includes("=")) {
+      return arg.split("=")[1];
+    }
+
+    // --name value format: return next argument if it exists and isn't another flag
+    const nextArg = process.argv[argIndex + 1];
+    if (nextArg && !nextArg.startsWith("--")) {
+      return nextArg;
+    }
   }
+
+  // Check environment variables
   if (process.env[name]) {
     return process.env[name];
   }
   if (process.env[name.toUpperCase()]) {
     return process.env[name.toUpperCase()];
   }
+
   return fallback;
 }
 
