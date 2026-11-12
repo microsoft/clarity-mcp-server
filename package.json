@@ -1,7 +1,7 @@
 {
   "name": "@microsoft/clarity-mcp-server",
-  "version": "2.0.2",
-  "description": "MCP Server for Microsoft Clarity based on data export API",
+  "version": "2.1.0",
+  "description": "The official MCP Server for Microsoft Clarity",
   "author": "Microsoft",
   "license": "MIT",
   "type": "module",
@@ -13,15 +13,13 @@
   },
   "keywords": [
     "clarity",
+    "clarity-ai",
     "behavior-analytics-tools",
     "heatmaps",
     "session-recordings",
     "insights",
     "analytics",
-    "mcp",
-    "model-context-protocol",
-    "ai",
-    "agents"
+    "ai-visibility"
   ],
   "bin": {
     "clarity-mcp-server": "./dist/cli.js"
@@ -34,6 +32,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.2",
+    "@napi-rs/keyring": "^2.1.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

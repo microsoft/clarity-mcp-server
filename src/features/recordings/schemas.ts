@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProjectId } from "../../mcp/schemas.js";
 
 export enum SortOptionsEnum {
   SessionStart_DESC = 0,
@@ -99,14 +100,9 @@ const SortOptions = z.enum([
   "PageCount_DESC",
 ]).default("SessionStart_DESC").describe("Sort option for session recordings. Default is SessionStart_DESC (newest first).");
 
-const SearchQuery = z.string().describe("A natural language search query string for filtering and shaping analytics data. The query should be specific and include temporal constraints when available. (e.g., 'Top browsers last 3 days', 'The active time duration for mobile devices in United States last week'). Time ranges should be explicitly specified when possible. If no time range is provided, prompt the user to specify one.");
-
 export const ListRequest = {
   filters: Filters,
   sortBy: SortOptions,
-  count: SampleCount
-};
-
-export const SearchRequest = {
-  query: SearchQuery,
+  count: SampleCount,
+  projectId: ProjectId
 };

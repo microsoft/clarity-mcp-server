@@ -2,8 +2,8 @@
   "manifest_version": "0.2",
   "name": "@microsoft/clarity-mcp-server",
   "display_name": "Microsoft Clarity",
-  "version": "2.0.1",
-  "description": "MCP Server for Microsoft Clarity",
+  "version": "2.1.0",
+  "description": "The official MCP Server for Microsoft Clarity",
   "long_description": "This extension enables integration between AI systems and Microsoft Clarity, providing access to project analytics, documentation, and session recordings.",
   "author": {
     "name": "Microsoft",
@@ -33,32 +33,136 @@
   },
   "tools": [
     {
+      "name": "login",
+      "description": "Sign in to Microsoft Clarity with your Clarity account in the browser."
+    },
+    {
+      "name": "login-status",
+      "description": "Show whether you are signed in to Microsoft Clarity and which credentials the tools use."
+    },
+    {
+      "name": "logout",
+      "description": "Sign out of Microsoft Clarity and remove the sign-in from this machine."
+    },
+    {
+      "name": "list-projects",
+      "description": "List the Microsoft Clarity projects you can query."
+    },
+    {
+      "name": "select-project",
+      "description": "Choose the Microsoft Clarity project to query; it stays selected until you choose another."
+    },
+    {
+      "name": "query-analytics-dashboard",
+      "description": "Fetch Microsoft Clarity analytics data using a simplified natural language search query. The query should be focused on one specific data retrieval or aggregation task. Avoid complex multi-purpose queries. Time ranges should be explicitly specified when possible. If no time range is provided, prompt the user to specify one. Do NOT use this tool for AI bot, crawler, or crawling-activity questions (which bots or AI crawlers accessed the site, crawled paths, content or page types, HTTP status codes, robots.txt violations, or scrape-to-referral) - use the dedicated Bot Activity tools for those instead."
+    },
+    {
       "name": "list-session-recordings",
       "description": "List Microsoft Clarity session recordings timeline information. Returns metadata including session link, duration, and a timeline of relevant user interactions."
     },
     {
-      "name": "query-documentation-data",
-      "description": "Fetch Microsoft Clarity documentation snippets for finding answers to user questions including step-by-step screenshots for setup guides, features, usage, troubleshooting, and integration instructions. The query should be focused on one specific documentation topic or question. Avoid complex multi-purpose queries."
+      "name": "get-citation-overview",
+      "description": "Get AI Visibility citation counts, share of authority, branded split, AI referred traffic, topic availability, and data freshness for the project's verified domain."
     },
     {
-      "name": "query-analytics-data",
-      "description": "Fetch Microsoft Clarity analytics data using a simplified natural language search query. The query should be focused on one specific data retrieval or aggregation task. Avoid complex multi-purpose queries. Time ranges should be explicitly specified when possible. If no time range is provided, prompt the user to specify one."
+      "name": "list-citation-queries",
+      "description": "List AI queries that cite the project's verified domain, with citation count, share of authority, topic, and branded status."
+    },
+    {
+      "name": "list-citation-topics",
+      "description": "List AI query topics that cite the project's verified domain."
+    },
+    {
+      "name": "list-top-cited-pages",
+      "description": "List pages from the project's verified domain that were cited in AI answers."
+    },
+    {
+      "name": "get-citation-metric-trends",
+      "description": "Get AI Visibility citation trends over time for whole-project metrics: total citations or share of authority."
+    },
+    {
+      "name": "get-citation-item-trends",
+      "description": "Get AI Visibility citation trends over time for specific queries or cited pages."
+    },
+    {
+      "name": "get-bot-activity-overview",
+      "description": "Get Bot Activity summary metrics including AI requests, unique HTML paths, and robots.txt compliance violations."
+    },
+    {
+      "name": "list-ai-crawlers",
+      "description": "List AI crawlers and their request counts for the Clarity project."
+    },
+    {
+      "name": "list-bot-path-requests",
+      "description": "List paths requested by AI bots, ranked by request count."
+    },
+    {
+      "name": "get-bot-activity-distribution",
+      "description": "Get Bot Activity distribution by content type, page type, or HTTP status code."
+    },
+    {
+      "name": "get-bot-activity-metric-trends",
+      "description": "Get Bot Activity trends over time for whole-project metrics: total requests, site pages crawled, or robots.txt violations."
+    },
+    {
+      "name": "get-bot-activity-item-trends",
+      "description": "Get Bot Activity trends over time for specific crawled paths, HTTP status codes, or content types."
+    },
+    {
+      "name": "get-ai-crawler-trends",
+      "description": "Get Bot Activity trends over time for specific AI crawlers."
+    },
+    {
+      "name": "get-scrape-to-referral-ratio",
+      "description": "Get how many AI scrapes each operator performed for every visit it referred back, with per-provider ratios and domain coverage state."
+    },
+    {
+      "name": "list-connected-cdn-providers",
+      "description": "List the CDN providers connected to the Clarity project, with connection status and covered domain."
+    },
+    {
+      "name": "get-topic-insight-constraints",
+      "description": "Get the Topic Insights validation rules: topic name length, question count and length, weekly report limit, and regeneration cooldown."
+    },
+    {
+      "name": "list-topic-insights",
+      "description": "List the project's Topic Insight topics, suggested topics, and their generated reports."
+    },
+    {
+      "name": "get-topic-insight-report",
+      "description": "Get a Topic Insight report: citation rate, competitive share, competitor ranking, content strengths and opportunities."
+    },
+    {
+      "name": "get-topic-insight-status",
+      "description": "Get the generation status of Topic Insight report runs."
+    },
+    {
+      "name": "create-topic-insight-report",
+      "description": "Create a Topic Insight topic and start generating its report."
+    },
+    {
+      "name": "regenerate-topic-insight-report",
+      "description": "Regenerate the report for an existing Topic Insight topic."
+    },
+    {
+      "name": "delete-topic-insight",
+      "description": "Delete a Topic Insight topic and its reports."
+    },
+    {
+      "name": "query-documentation-resources",
+      "description": "Retrieve Microsoft Clarity documentation snippets for finding answers to user questions including step-by-step screenshots for setup guides, features, usage, troubleshooting, and integration instructions. The query should be focused on one specific documentation topic or question. Avoid complex multi-purpose queries."
     }
   ],
   "tools_generated": false,
   "keywords": [
     "clarity",
-    "api",
-    "analytics",
+    "clarity-ai",
     "behavior-analytics-tools",
     "heatmaps",
     "session-recordings",
-    "mcp",
-    "data insights",
     "insights",
-    "model-context-protocol",
-    "ai",
-    "agent"
+    "analytics",
+    "ai-visibility"
   ],
   "license": "MIT",
   "privacy_policies": [
@@ -78,9 +182,9 @@
   "user_config": {
     "api_token": {
       "type": "string",
-      "title": "Clarity API Token",
-      "description": "Provide your Clarity data export API token",
-      "required": true,
+      "title": "Clarity API Token (optional)",
+      "description": "Optional Clarity Data Export API token. Leave empty to sign in with your Clarity account using the login tool.",
+      "required": false,
       "sensitive": true
     }
   }
