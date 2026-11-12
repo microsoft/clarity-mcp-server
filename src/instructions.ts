@@ -13,10 +13,6 @@ This MCP server provides access to Microsoft Clarity analytics dashboard data, A
 ${AUTH_INSTRUCTIONS}
 ${PROJECT_INSTRUCTIONS}
 
-## API Failures
-
-If a tool reports an internal server error, relay its message and include the request ID exactly as returned so the user can share it with support. Do not invent a request ID when none is provided or expose internal error details.
-
 ## Available Tools
 
 ${RECORDING_INSTRUCTIONS}
@@ -34,4 +30,8 @@ Like the other Clarity data tools, the AI Visibility tools query the selected pr
 ${CITATION_INSTRUCTIONS}
 ${BOT_ACTIVITY_INSTRUCTIONS}
 ${TOPIC_INSIGHT_INSTRUCTIONS}
+
+## API Failures
+
+If a tool reports an internal server error, relay its message and include the request ID exactly as returned so the user can share it with support. Do not invent a request ID when none is provided or expose internal error details.
 `;
