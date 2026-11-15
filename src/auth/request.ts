@@ -11,19 +11,23 @@ export const PROJECT_ID_HEADER = "x-clarity-project-id";
  * Adds the project header only when a non-empty project ID is supplied; this
  * function does not resolve or change the selected project. If the first request
  * returns HTTP 401, asks the OAuth client for a refreshed access token and retries
- * once. Other responses, including a second HTTP 401, are returned unchanged for
- * the caller to interpret.
+ * once. If refresh returns no token, preserves the first HTTP 401 so the caller
+ * can report its status and request ID. Refresh and retry failures propagate.
+ * Other responses, including a second HTTP 401, are returned unchanged for the
+ * caller to interpret.
  *
  * @param url - The endpoint URL to send the request to.
  * @param body - The request payload to serialize as JSON.
  * @param projectId - The project ID to include in the request header, or `undefined`
  * for a request without an explicit project.
+ * @param sessionId - The sign-in owning the project selection, when supplied.
+ * An account switch prevents using credentials from another sign-in.
  * @returns The initial or retried HTTP response, or `null` if the OAuth client
- * cannot provide an access token before either attempt.
+ * cannot provide an access token before the first attempt.
  * @throws Propagates token-acquisition, JSON-serialization, and network errors
  * so the caller can log them and produce an appropriate tool result.
  */
-export async function sendWithOAuth(url: string, body: unknown, projectId: string | undefined): Promise<Response | null> {
+export async function sendWithOAuth(url: string, body: unknown, projectId: string | undefined, sessionId?: string): Promise<Response | null> {
   const send = (token: string) => fetch(url, {
     method: "POST",
     headers: {
@@ -34,7 +38,7 @@ export async function sendWithOAuth(url: string, body: unknown, projectId: strin
     body: JSON.stringify(body),
   });
 
-  let accessToken = await oauthClient.getAccessToken();
+  let accessToken = await oauthClient.getAccessToken(undefined, sessionId);
   if (!accessToken) {
     return null;
   }
@@ -43,6 +47,6 @@ export async function sendWithOAuth(url: string, body: unknown, projectId: strin
     return response;
   }
   // The access token may have expired early; refresh once. A revoked sign-in fails the refresh.
-  accessToken = await oauthClient.getAccessToken(accessToken);
-  return accessToken ? send(accessToken) : null;
+  accessToken = await oauthClient.getAccessToken(accessToken, sessionId);
+  return accessToken ? await send(accessToken) : response;
 }

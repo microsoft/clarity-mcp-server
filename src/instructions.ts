@@ -33,5 +33,7 @@ ${TOPIC_INSIGHT_INSTRUCTIONS}
 
 ## API Failures
 
-If a tool reports an internal server error, relay its message and include the request ID exactly as returned so the user can share it with support. Do not invent a request ID when none is provided or expose internal error details.
+Explain failed requests using the returned HTTP status and cause. Do not replace authentication, permission, parameter, missing-resource, conflict, or rate-limit failures with generic advice to try again shortly. Do not repeatedly retry 401 or 403 failures without addressing the authentication, project permissions, or specific prerequisite reported by the tool.
+
+For every failed request, include each X-Request-Id exactly as returned so the user can share it with support, regardless of HTTP status or authentication method. Do not invent a request ID when none is provided or expose internal error details.
 `;

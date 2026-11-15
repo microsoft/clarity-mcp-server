@@ -8,13 +8,8 @@ import { CredentialKind } from "../auth/models.js";
 import { oauthClient } from "../auth/oauth.js";
 import { sendWithOAuth } from "../auth/request.js";
 import { CLARITY_API_TOKEN } from "../config.js";
-import { describeOAuthFailure } from "../projects/service.js";
-import {
-  AI_VISIBILITY_DOMAIN_NOT_VERIFIED_ERROR,
-  AI_VISIBILITY_DOMAIN_NOT_VERIFIED_MESSAGE,
-  CLARITY_REQUEST_FAILED_MESSAGE,
-  getServerErrorMessage,
-} from "./messages.js";
+import { describeRequestFailure, SESSION_CHANGED_MESSAGE } from "../projects/service.js";
+import { CLARITY_REQUEST_FAILED_MESSAGE, withRequestId } from "./messages.js";
 import { type ToolResult, textResult } from "./results.js";
 
 /**
@@ -72,17 +67,28 @@ export async function callClarityApi(url: string, body: unknown, options: CallOp
  */
 async function callWithOAuth(url: string, body: unknown, options: CallOptions): Promise<ToolResult> {
   try {
-    const projectId = options.noProject ? undefined : options.projectId ?? (await oauthClient.getSelectedProjectId()) ?? undefined;
-    const response = await sendWithOAuth(url, body, projectId);
+    const sessionId = await oauthClient.getSessionId();
+    if (sessionId === null) {
+      return textResult(getSignInEndedMessage(), true);
+    }
+    const projectId = options.noProject ? undefined : options.projectId ?? (await oauthClient.getSelectedProjectId(sessionId)) ?? undefined;
+    const response = await sendWithOAuth(url, body, projectId, sessionId);
 
     if (!response) {
       return textResult(getSignInEndedMessage(), true);
     }
+    if (await oauthClient.getSessionId() !== sessionId) {
+      return textResult(withRequestId(response, SESSION_CHANGED_MESSAGE), true);
+    }
     if (!response.ok) {
-      return textResult(await describeOAuthFailure(response, projectId), true);
+      return textResult(await describeRequestFailure(response, projectId, CredentialKind.OAuth, sessionId), true);
     }
 
-    return textResult(JSON.stringify(await response.json(), null, 2));
+    const data = await response.json();
+    if (await oauthClient.getSessionId() !== sessionId) {
+      return textResult(withRequestId(response, SESSION_CHANGED_MESSAGE), true);
+    }
+    return textResult(JSON.stringify(data, null, 2));
   } catch (error) {
     console.error("Microsoft Clarity API request failed:", error);
     return textResult(CLARITY_REQUEST_FAILED_MESSAGE, true);
@@ -93,10 +99,8 @@ async function callWithOAuth(url: string, body: unknown, options: CallOptions): 
  * Sends a JSON POST request using a project-scoped Data Export API token.
  *
  * An explicit project override is rejected because the token can query only its
- * own project. Domain-verification failures return a dedicated error result;
- * server errors return an error result with the service's request ID when present.
- * Other request failures are logged and return the existing generic text result
- * without setting `isError`.
+ * own project. HTTP failures return status-specific error results, preserving
+ * domain-verification guidance and the service's request ID when present.
  *
  * @param url - The Clarity MCP endpoint URL.
  * @param body - The request payload to serialize as JSON.
@@ -117,21 +121,12 @@ async function callWithDataExportToken(url: string, body: unknown, token: string
     });
 
     if (!response.ok) {
-      if (response.status >= 500) {
-        const message = getServerErrorMessage(response);
-        console.error("Microsoft Clarity API request failed:", url, response.status, message);
-        return textResult(message, true);
-      }
-      const error = ((await response.json().catch(() => null)) as { error?: string; } | null)?.error;
-      if (response.status === 403 && error === AI_VISIBILITY_DOMAIN_NOT_VERIFIED_ERROR) {
-        return textResult(AI_VISIBILITY_DOMAIN_NOT_VERIFIED_MESSAGE, true);
-      }
-      throw new Error(`Endpoint request failed with status: ${url} ${response.status}`);
+      return textResult(await describeRequestFailure(response, undefined, CredentialKind.DataExportToken), true);
     }
 
     return textResult(JSON.stringify(await response.json(), null, 2));
   } catch (error) {
     console.error("Microsoft Clarity API request failed:", error);
-    return textResult(CLARITY_REQUEST_FAILED_MESSAGE);
+    return textResult(CLARITY_REQUEST_FAILED_MESSAGE, true);
   }
 }

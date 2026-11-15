@@ -13,7 +13,8 @@ import { LIST_PROJECTS_TOOL, SELECT_PROJECT_TOOL } from "../features/projects/to
 import {
   AI_VISIBILITY_DOMAIN_NOT_VERIFIED_ERROR,
   AI_VISIBILITY_DOMAIN_NOT_VERIFIED_MESSAGE,
-  getServerErrorMessage,
+  CLARITY_SERVER_ERROR_MESSAGE,
+  withRequestId,
 } from "../mcp/messages.js";
 import { type ToolResult, textResult } from "../mcp/results.js";
 import type { ProjectsResponse, ProjectSummary } from "./models.js";
@@ -32,14 +33,22 @@ export const PROJECTS_CACHE_TTL_MS = 10 * 60 * 1000;
 export async function listProjects(refresh = false): Promise<ToolResult> {
   const credential = await getActiveCredential();
   if (credential === CredentialKind.OAuth) {
-    const outcome = await getOAuthProjects(refresh);
+    const sessionId = await oauthClient.getSessionId();
+    if (sessionId === null) {
+      return textResult(getSignInEndedMessage(), true);
+    }
+    const outcome = await getOAuthProjects(refresh, sessionId);
     if (!outcome.error) {
-      return textResult(JSON.stringify({ projects: outcome.projects, ...(await describeSelection(outcome.projects)) }, null, 2));
+      const selection = await describeSelection(outcome.projects, sessionId);
+      return selection && await oauthClient.getSessionId() === sessionId
+        ? textResult(JSON.stringify({ projects: outcome.projects, ...selection }, null, 2))
+        : textResult(SESSION_CHANGED_MESSAGE, true);
     }
     // When the sign-in has just ended and a token is configured, the tools fall back to the token.
     if (!(outcome.signInEnded && CLARITY_API_TOKEN)) {
       return textResult(outcome.error, true);
     }
+    return textResult(`${outcome.error} ${getDataExportTokenSingleProjectMessage()}`, true);
   }
   return textResult(CLARITY_API_TOKEN ? getDataExportTokenSingleProjectMessage() : getNotSignedInMessage(), true);
 }
@@ -47,8 +56,17 @@ export async function listProjects(refresh = false): Promise<ToolResult> {
 // The signed-in user's projects and selected project for the sign-in status, or why they could not be listed.
 export async function getSignedInProjects(): Promise<object> {
   try {
-    const outcome = await getOAuthProjects(false);
-    return outcome.error ? { projectsError: outcome.error } : { projects: outcome.projects, ...(await describeSelection(outcome.projects)) };
+    const sessionId = await oauthClient.getSessionId();
+    if (sessionId === null) {
+      return { projectsError: getNotSignedInMessage() };
+    }
+    const outcome = await getOAuthProjects(false, sessionId);
+    if (outcome.error) {
+      return { projectsError: outcome.error };
+    }
+    const selection = await describeSelection(outcome.projects, sessionId);
+    return selection && await oauthClient.getSessionId() === sessionId
+      ? { projects: outcome.projects, ...selection } : { projectsError: SESSION_CHANGED_MESSAGE };
   } catch (error) {
     console.error("Could not list the Clarity projects:", error);
     return { projectsError: "Could not list your Clarity projects. Try again shortly." };
@@ -65,12 +83,19 @@ export async function selectProject(projectId: string): Promise<ToolResult> {
     return textResult(getNotSignedInMessage(), true);
   }
   try {
-    let outcome = await getOAuthProjects(false);
+    const sessionId = await oauthClient.getSessionId();
+    if (sessionId === null) {
+      return textResult(getSignInEndedMessage(), true);
+    }
+    let outcome = await getOAuthProjects(false, sessionId);
     let project = findProject(outcome.projects, projectId);
     if (!outcome.error && !project) {
       // The user may have just gained access to it.
-      outcome = await getOAuthProjects(true);
+      outcome = await getOAuthProjects(true, sessionId);
       project = findProject(outcome.projects, projectId);
+    }
+    if (await oauthClient.getSessionId() !== sessionId) {
+      return textResult(SESSION_CHANGED_MESSAGE, true);
     }
     if (outcome.error) {
       return textResult(outcome.error, true);
@@ -78,8 +103,11 @@ export async function selectProject(projectId: string): Promise<ToolResult> {
     if (!project) {
       return textResult(`Project ${projectId} is not one of the projects your Clarity account can access as an admin or member. ${describeProjectList(outcome.projects)}`, true);
     }
-    if (!(await oauthClient.selectProject(project.projectId))) {
-      return textResult(getNotSignedInMessage(), true);
+    if (!(await oauthClient.selectProject(project.projectId, sessionId))) {
+      return textResult(await oauthClient.getSessionId() === null ? getNotSignedInMessage() : SESSION_CHANGED_MESSAGE, true);
+    }
+    if (await oauthClient.getSessionId() !== sessionId) {
+      return textResult(SESSION_CHANGED_MESSAGE, true);
     }
     return textResult(`Selected project ${describeProject(project)}. The Clarity tools will query this project until another one is selected.`);
   } catch (error) {
@@ -94,8 +122,11 @@ export function prefetchProjects(): void {
 }
 
 // The project the tools query: the selected one, or the user's only project, which the service picks on its own.
-async function describeSelection(projects: readonly ProjectSummary[]): Promise<{ selectedProject: ProjectSummary | null; }> {
-  const selectedId = await oauthClient.getSelectedProjectId();
+async function describeSelection(projects: readonly ProjectSummary[], sessionId: string): Promise<{ selectedProject: ProjectSummary | null; } | null> {
+  const selectedId = await oauthClient.getSelectedProjectId(sessionId);
+  if (await oauthClient.getSessionId() !== sessionId) {
+    return null;
+  }
   const selected = selectedId ? findProject(projects, selectedId) ?? { projectId: selectedId, name: null, hostname: null } : null;
   return { selectedProject: selected ?? (projects.length === 1 ? projects[0]! : null) };
 }
@@ -108,8 +139,22 @@ let projectCache: { sessionId: string; projects: ProjectSummary[]; expiresAtMs: 
 
 let projectFetch: { sessionId: string; promise: Promise<ProjectsResponse>; } | null = null;
 
-async function getOAuthProjects(refresh: boolean): Promise<ProjectsResponse> {
+export const SESSION_CHANGED_MESSAGE = "Your Clarity sign-in changed while the request was running. Run the tool again for the current account.";
+
+async function getCachedProjects(expectedSessionId?: string): Promise<ProjectSummary[]> {
   const sessionId = await oauthClient.getSessionId();
+  if (expectedSessionId !== undefined && sessionId !== expectedSessionId) {
+    return [];
+  }
+  return sessionId !== null && projectCache?.sessionId === sessionId && projectCache.expiresAtMs > Date.now()
+    ? projectCache.projects : [];
+}
+
+async function getOAuthProjects(refresh: boolean, expectedSessionId?: string): Promise<ProjectsResponse> {
+  const sessionId = await oauthClient.getSessionId();
+  if (expectedSessionId !== undefined && sessionId !== expectedSessionId) {
+    return { projects: [], error: SESSION_CHANGED_MESSAGE };
+  }
   if (sessionId === null) {
     projectCache = null;
     return { projects: [], error: getNotSignedInMessage() };
@@ -129,7 +174,18 @@ async function getOAuthProjects(refresh: boolean): Promise<ProjectsResponse> {
 }
 
 async function fetchOAuthProjects(sessionId: string): Promise<ProjectsResponse> {
-  const response = await sendWithOAuth(PROJECTS_LIST_URL, {}, undefined);
+  const response = await sendWithOAuth(PROJECTS_LIST_URL, {}, undefined, sessionId);
+  const currentSessionId = await oauthClient.getSessionId();
+  if (currentSessionId === null) {
+    projectCache = null;
+    if (response?.status === 401) {
+      return { projects: [], error: await describeRequestFailure(response, undefined), signInEnded: true };
+    }
+    return { projects: [], error: getSignInEndedMessage(), signInEnded: true };
+  }
+  if (currentSessionId !== sessionId) {
+    return { projects: [], error: SESSION_CHANGED_MESSAGE };
+  }
   if (!response) {
     projectCache = null;
     return { projects: [], error: getSignInEndedMessage(), signInEnded: true };
@@ -140,7 +196,14 @@ async function fetchOAuthProjects(sessionId: string): Promise<ProjectsResponse> 
   } else if (response.status === 404) {
     projects = [];
   } else {
-    return { projects: [], error: await describeOAuthFailure(response, undefined) };
+    return {
+      projects: [],
+      error: await describeRequestFailure(response, undefined, CredentialKind.OAuth, sessionId),
+      signInEnded: response.status === 401 && !(await oauthClient.isSignedIn()),
+    };
+  }
+  if (await oauthClient.getSessionId() !== sessionId) {
+    return { projects: [], error: SESSION_CHANGED_MESSAGE };
   }
   projectCache = { sessionId, projects, expiresAtMs: Date.now() + PROJECTS_CACHE_TTL_MS };
   return { projects };
@@ -149,55 +212,103 @@ async function fetchOAuthProjects(sessionId: string): Promise<ProjectsResponse> 
 // A 403 for a project means the user cannot reach it now. Re-reading the project list tells apart access that was lost
 // since the list was cached (membership removed, or an admin ended this sign-in's access to the project) from a
 // project that was never theirs.
-async function explainProjectDenied(projectId: string): Promise<string> {
-  const known = findProject(projectCache?.projects ?? [], projectId);
-  const latest = await getOAuthProjects(true);
+async function explainProjectDenied(projectId: string, expectedSessionId?: string): Promise<string> {
+  const sessionId = expectedSessionId ?? await oauthClient.getSessionId();
+  if (sessionId === null || await oauthClient.getSessionId() !== sessionId) {
+    return SESSION_CHANGED_MESSAGE;
+  }
+  const known = findProject(await getCachedProjects(sessionId), projectId);
+  const latest = await getOAuthProjects(true, sessionId);
+  if (await oauthClient.getSessionId() !== sessionId) {
+    return SESSION_CHANGED_MESSAGE;
+  }
   if (latest.error) {
     return `Your Clarity account cannot access project ${projectId}. ${latest.error}`;
   }
   const list = describeProjectList(latest.projects);
   if (findProject(latest.projects, projectId)) {
-    return `Microsoft Clarity refused this action on project ${projectId}. Requests are restricted by your admin or member permissions for this project. Ask a project admin to check your permissions; signing in again does not grant additional access.`;
+    return `Microsoft Clarity refused this action on project ${projectId}, which is still listed as accessible to your account. Ask the user to verify their admin or member role and the permissions needed for this action in the project's settings, and contact a project admin if needed; signing in again does not grant additional access.`;
   }
   // Forget the selection so the next request does not hit the same refusal; the user picks another project.
-  const wasSelected = (await oauthClient.getSelectedProjectId())?.toLowerCase() === projectId.toLowerCase();
+  const wasSelected = (await oauthClient.getSelectedProjectId(sessionId))?.toLowerCase() === projectId.toLowerCase();
+  if (await oauthClient.getSessionId() !== sessionId) {
+    return SESSION_CHANGED_MESSAGE;
+  }
   if (wasSelected) {
-    await oauthClient.selectProject(null);
+    if (!(await oauthClient.selectProject(null, sessionId))) {
+      return SESSION_CHANGED_MESSAGE;
+    }
   }
   const next = wasSelected && latest.projects.length > 0 ? ` It is no longer selected; ask the user which project to use instead, then call \`${SELECT_PROJECT_TOOL}\`.` : "";
   if (known) {
-    return `You no longer have access to project ${describeProject(known)}: your admin or member access may have been removed, or an admin ended this sign-in's access to it. ${list}${next}`;
+    return `You no longer have access to project ${describeProject(known)}: your admin or member access may have been removed, or an admin ended this sign-in's access to it. Ask the user to verify their role and needed permissions with a project admin. ${list}${next}`;
   }
-  return `Project ${projectId} is not one of the projects your Clarity account can access as an admin or member. ${list}${next}`;
+  return `Project ${projectId} is not one of the projects your Clarity account can access as an admin or member. Ask the user to verify their role and needed permissions with a project admin. ${list}${next}`;
 }
 
 // ---- Failed requests ----
 
-export async function describeOAuthFailure(response: Response, projectId: string | undefined): Promise<string> {
+export async function describeRequestFailure(
+  response: Response,
+  projectId: string | undefined,
+  credential: CredentialKind = CredentialKind.OAuth,
+  sessionId?: string,
+): Promise<string> {
+  let message: string;
+  try {
+    if (sessionId !== undefined && await oauthClient.getSessionId() !== sessionId) {
+      return withRequestId(response, SESSION_CHANGED_MESSAGE);
+    }
+    message = await explainRequestFailure(response, projectId, credential, sessionId);
+    if (sessionId !== undefined && await oauthClient.getSessionId() !== sessionId) {
+      return withRequestId(response, SESSION_CHANGED_MESSAGE);
+    }
+  } catch (error) {
+    console.error("Could not explain the failed Clarity request:", response.status, error);
+    message = response.status === 403
+      ? "Microsoft Clarity refused this action. Project access could not be verified; ask the user to verify their admin or member role and needed permissions with a project admin."
+      : "Microsoft Clarity rejected the request, but additional failure details could not be retrieved.";
+  }
+  return withRequestId(response, `HTTP ${response.status}: ${message}`);
+}
+
+async function explainRequestFailure(response: Response, projectId: string | undefined, credential: CredentialKind, sessionId?: string): Promise<string> {
   if (response.status >= 500) {
-    const message = getServerErrorMessage(response);
+    const message = CLARITY_SERVER_ERROR_MESSAGE;
     console.error("Clarity request failed with status:", response.url, response.status, message);
     return message;
   }
   const body = (await response.json().catch(() => null)) as { error?: string; } | null;
+  if (sessionId !== undefined && await oauthClient.getSessionId() !== sessionId) {
+    return SESSION_CHANGED_MESSAGE;
+  }
+  if (response.status === 403 && body?.error === AI_VISIBILITY_DOMAIN_NOT_VERIFIED_ERROR) {
+    return AI_VISIBILITY_DOMAIN_NOT_VERIFIED_MESSAGE;
+  }
+  if (credential === CredentialKind.DataExportToken && (response.status === 401 || response.status === 403)) {
+    const cause = response.status === 401
+      ? "Microsoft Clarity did not accept the Data Export API token."
+      : "Microsoft Clarity denied this action using the Data Export API token.";
+    return `${cause} Recommend calling the \`${LOGIN_TOOL}\` tool to sign in with a Clarity account instead of retrying with the token.`;
+  }
   if (response.status === 400 && body?.error === "project_selection_required") {
-    const cached = projectCache?.projects ?? [];
-    const list = cached ? ` ${describeProjectList(cached)}` : ` Call \`${LIST_PROJECTS_TOOL}\` to see them.`;
+    const cached = await getCachedProjects(sessionId);
+    const list = cached.length > 0 ? ` ${describeProjectList(cached)}` : ` Call \`${LIST_PROJECTS_TOOL}\` to see them.`;
     return `Your Clarity account can access several projects and none is selected yet. Pass projectId to query a specific project, or ask the user which project to use by default and call \`${SELECT_PROJECT_TOOL}\` with its id.${list}`;
   }
   if (response.status === 400) {
     return body?.error || "Microsoft Clarity rejected the request parameters. Check them against the tool description and try again.";
   }
   if (response.status === 401) {
-    return `Your Microsoft Clarity sign-in is no longer valid. Call the \`${LOGIN_TOOL}\` tool to sign in again.`;
+    return `Microsoft Clarity did not accept your sign-in. Call the \`${LOGIN_TOOL}\` tool to sign in again, then call \`${LIST_PROJECTS_TOOL}\` to check access to ${projectId ? `project ${projectId}` : "the corresponding project"}. Ask the user to verify their admin or member role and the permissions needed for the action; signing in does not grant additional project permissions.`;
   }
   if (response.status === 403) {
-    if (body?.error === AI_VISIBILITY_DOMAIN_NOT_VERIFIED_ERROR) {
-      return AI_VISIBILITY_DOMAIN_NOT_VERIFIED_MESSAGE;
+    if (response.url === PROJECTS_LIST_URL) {
+      return "Microsoft Clarity refused to list your projects, so project access could not be verified. Do not repeat the denied project-list request. Ask the user to verify their admin or member role and needed permissions with a project admin; signing in again does not grant additional permissions.";
     }
     return projectId
-      ? explainProjectDenied(projectId)
-      : "Microsoft Clarity refused this action. Requests are restricted by your admin or member permissions for the project. Ask a project admin to check your access; signing in again does not grant additional permissions.";
+      ? explainProjectDenied(projectId, sessionId)
+      : `Microsoft Clarity refused this action. Call \`${LIST_PROJECTS_TOOL}\` with refresh set to true to check whether the corresponding project is accessible as an admin or member. Ask the user to verify their role and needed permissions in that project's settings with a project admin; signing in again does not grant additional permissions.`;
   }
   if (response.status === 404 && body?.error === "No accessible projects found") {
     return "Your Clarity account has no accessible projects as an admin or member.";
@@ -217,5 +328,5 @@ export async function describeOAuthFailure(response: Response, projectId: string
     return `The daily Clarity MCP request limit was reached for this project.${retryAfter ? ` Try again in ${retryAfter} seconds.` : ""}`;
   }
   console.error("Clarity request failed with status:", response.url, response.status);
-  return "An error occurred while fetching the data.";
+  return "Microsoft Clarity rejected the request with an unexpected HTTP status. Verify the requested action and parameters; contact support if the issue persists.";
 }

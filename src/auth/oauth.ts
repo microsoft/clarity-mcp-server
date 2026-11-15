@@ -22,6 +22,7 @@ import type {
   PendingLogin,
   StartLoginResult,
   StoredSession,
+  StoredAccessToken,
   TokenResponse,
 } from "./models.js";
 import { acquireRefreshLock, createPkce, openInBrowser, refreshLockPortFor, respondPage, safeEqual } from "./utils.js";
@@ -29,8 +30,8 @@ import { acquireRefreshLock, createPkce, openInBrowser, refreshLockPortFor, resp
 export class ClarityOAuthClient {
   private readonly deps: IOAuthClientDeps;
   private store: Promise<ICredentialStore> | null = null;
-  private accessToken: { value: string; expiresAtMs: number; } | null = null;
-  private refreshInFlight: Promise<string | null> | null = null;
+  private accessToken: StoredAccessToken | null = null;
+  private refreshInFlight: { sessionId: string; promise: Promise<string | null>; } | null = null;
   private loginStartup: Promise<StartLoginResult> | null = null;
   private pendingLogin: PendingLogin | null = null;
   private lastLoginError: string | null = null;
@@ -57,17 +58,19 @@ export class ClarityOAuthClient {
   }
 
   // The project the user selected for this sign-in, or null when none was selected.
-  async getSelectedProjectId(): Promise<string | null> {
-    return (await this.loadSession())?.selectedProjectId ?? null;
+  async getSelectedProjectId(expectedSessionId?: string): Promise<string | null> {
+    const session = await this.loadSession();
+    return session && (expectedSessionId === undefined || session.sessionId === expectedSessionId)
+      ? session.selectedProjectId ?? null : null;
   }
 
   // Remembers (or with null, forgets) the project to query. Taken under the refresh lock so a concurrent refresh, which
   // rewrites the stored sign-in, cannot drop the choice. Returns false when not signed in.
-  async selectProject(projectId: string | null): Promise<boolean> {
+  async selectProject(projectId: string | null, expectedSessionId?: string): Promise<boolean> {
     return this.withRefreshLock(async () => {
       const store = await this.getStore();
       const session = await store.load();
-      if (!session) {
+      if (!session || (expectedSessionId !== undefined && session.sessionId !== expectedSessionId)) {
         return false;
       }
       const { selectedProjectId: _previous, ...rest } = session;
@@ -107,25 +110,40 @@ export class ClarityOAuthClient {
   }
 
   // Returns a valid access token, refreshing it when it is missing, about to expire, or was rejected by the service.
-  async getAccessToken(rejectedAccessToken?: string): Promise<string | null> {
+  async getAccessToken(rejectedAccessToken?: string, expectedSessionId?: string): Promise<string | null> {
+    const session = await this.loadSession();
+    if (!session || this.accessToken?.sessionId !== session.sessionId) {
+      this.accessToken = null;
+    }
+    if (!session || (expectedSessionId !== undefined && session.sessionId !== expectedSessionId)) {
+      return null;
+    }
     if (!rejectedAccessToken && this.isAccessTokenValid(this.accessToken)) {
       return this.accessToken.value;
     }
-    const shared = await this.loadSharedAccessToken(rejectedAccessToken);
+    const shared = await this.loadSharedAccessToken(session.sessionId, rejectedAccessToken);
     if (shared) {
       return shared;
     }
-    const token = await this.refreshOnce(rejectedAccessToken);
+    let token = await this.refreshOnce(session.sessionId, rejectedAccessToken);
     // A refresh already in flight for another caller may have reused the token the service just rejected.
-    return rejectedAccessToken && token === rejectedAccessToken ? this.refreshOnce(rejectedAccessToken) : token;
+    if (rejectedAccessToken && token === rejectedAccessToken) {
+      token = await this.refreshOnce(session.sessionId, rejectedAccessToken);
+    }
+    return await this.getSessionId() === session.sessionId ? token : null;
   }
 
   // Refresh tokens rotate on every use, so concurrent callers in this process share one refresh.
-  private refreshOnce(rejectedAccessToken?: string): Promise<string | null> {
-    this.refreshInFlight ??= this.refresh(rejectedAccessToken).finally(() => {
-      this.refreshInFlight = null;
-    });
-    return this.refreshInFlight;
+  private refreshOnce(sessionId: string, rejectedAccessToken?: string): Promise<string | null> {
+    if (this.refreshInFlight?.sessionId !== sessionId) {
+      const promise = this.refresh(sessionId, rejectedAccessToken).finally(() => {
+        if (this.refreshInFlight?.promise === promise) {
+          this.refreshInFlight = null;
+        }
+      });
+      this.refreshInFlight = { sessionId, promise };
+    }
+    return this.refreshInFlight.promise;
   }
 
   // Starts the Authorization Code + PKCE flow and returns immediately; a loopback listener completes the sign-in in the
@@ -333,16 +351,16 @@ export class ClarityOAuthClient {
 
   // The service revokes the whole sign-in when a rotated refresh token is replayed, so refreshes from every server
   // process on this machine are serialized and always use the latest stored refresh token.
-  private refresh(rejectedAccessToken?: string): Promise<string | null> {
+  private refresh(sessionId: string, rejectedAccessToken?: string): Promise<string | null> {
     return this.withRefreshLock(async () => {
       const store = await this.getStore();
       const session = await store.load();
-      if (!session) {
+      if (!session || session.sessionId !== sessionId) {
         this.accessToken = null;
         return null;
       }
       // Another process may have refreshed while this one waited for the lock.
-      const shared = await this.loadSharedAccessToken(rejectedAccessToken);
+      const shared = await this.loadSharedAccessToken(sessionId, rejectedAccessToken);
       if (shared) {
         return shared;
       }
@@ -352,6 +370,9 @@ export class ClarityOAuthClient {
           client_id: OAUTH_CLIENT_ID,
           refresh_token: session.refreshToken,
         });
+        if (await this.getSessionId() !== sessionId) {
+          return null;
+        }
         return await this.storeTokens(tokens, session.sessionId, session.selectedProjectId);
       } catch (error) {
         if (!(error instanceof OAuthTokenError && error.code === "invalid_grant")) {
@@ -359,7 +380,9 @@ export class ClarityOAuthClient {
         }
         // The sign-in was revoked or expired; the user must sign in again.
         this.accessToken = null;
-        await store.clear();
+        if (await this.getSessionId() === sessionId) {
+          await store.clear();
+        }
         return null;
       }
     });
@@ -373,9 +396,9 @@ export class ClarityOAuthClient {
       refreshToken: tokens.refresh_token,
       ...(selectedProjectId ? { selectedProjectId } : {}),
     });
-    this.accessToken = { value: tokens.access_token, expiresAtMs: Date.now() + tokens.expires_in * 1000 };
+    this.accessToken = { sessionId, value: tokens.access_token, expiresAtMs: Date.now() + tokens.expires_in * 1000 };
     try {
-      await store.saveAccessToken({ sessionId, ...this.accessToken });
+      await store.saveAccessToken(this.accessToken);
     } catch (error) {
       // Other server processes then refresh on their own, as they did before the access token was shared.
       console.error("Could not share the Clarity access token with other server processes:", error);
@@ -384,20 +407,17 @@ export class ClarityOAuthClient {
   }
 
   // The access token another server process on this machine saved for the current sign-in, if it is still usable.
-  private async loadSharedAccessToken(rejectedAccessToken?: string): Promise<string | null> {
+  private async loadSharedAccessToken(sessionId: string, rejectedAccessToken?: string): Promise<string | null> {
     const store = await this.getStore();
-    const session = await store.load();
-    if (!session) {
-      return null;
-    }
     const token = await store.loadAccessToken().catch((error) => {
       console.error("Could not read the shared Clarity access token:", error);
       return null;
     });
-    if (!token || token.sessionId !== session.sessionId || token.value === rejectedAccessToken || !this.isAccessTokenValid(token)) {
+    if (!token || token.sessionId !== sessionId || token.value === rejectedAccessToken ||
+      !this.isAccessTokenValid(token) || await this.getSessionId() !== sessionId) {
       return null;
     }
-    this.accessToken = { value: token.value, expiresAtMs: token.expiresAtMs };
+    this.accessToken = token;
     return token.value;
   }
 

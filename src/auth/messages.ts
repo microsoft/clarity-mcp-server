@@ -2,6 +2,10 @@ import { LOGIN_TOOL } from "../features/auth/tools.js";
 
 // Messages shared by the Clarity tools.
 
+export function getDataExportTokenSignInMessage(): string {
+  return `The Clarity tools are using a Data Export API token. Recommend signing in with a Clarity account instead by calling the \`${LOGIN_TOOL}\` tool; the sign-in takes precedence over the token and requests remain restricted by the user's admin or member permissions for each project.`;
+}
+
 export function getNotSignedInMessage(): string {
   return `Not signed in to Microsoft Clarity. Call the \`${LOGIN_TOOL}\` tool to sign in with a Clarity account, or configure a Clarity Data Export API token via the CLARITY_API_TOKEN environment variable or the --clarity_api_token command-line argument.`;
 }

@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getActiveCredential } from "../../auth/credentials.js";
+import { getDataExportTokenSignInMessage } from "../../auth/messages.js";
 import { CredentialKind } from "../../auth/models.js";
 import { oauthClient } from "../../auth/oauth.js";
 import { CLARITY_API_TOKEN } from "../../config.js";
@@ -10,7 +11,7 @@ import { SELECT_PROJECT_TOOL } from "../projects/tools.js";
 // --- Sign In to Microsoft Clarity ---
 
 export const LOGIN_TOOL = "login";
-export const LOGIN_DESCRIPTION = () => `Sign in to Microsoft Clarity with the user's Clarity account. Opens the Clarity sign-in and consent page in the browser and returns its URL so it can be shown to the user if the browser does not open. Returns immediately; call ${LOGIN_STATUS_TOOL} right away and repeat while loginPending is true, without asking the user to confirm completion. The server automatically receives the authorization code and exchanges tokens when the browser redirects. Project requests are restricted by the user's admin or member permissions for each project. Not needed when a Data Export API token is configured.`;
+export const LOGIN_DESCRIPTION = () => `Sign in to Microsoft Clarity with the user's Clarity account. Opens the Clarity sign-in and consent page in the browser and returns its URL so it can be shown to the user if the browser does not open. Returns immediately; call ${LOGIN_STATUS_TOOL} right away and repeat while loginPending is true, without asking the user to confirm completion. The server automatically receives the authorization code and exchanges tokens when the browser redirects. Project requests are restricted by the user's admin or member permissions for each project. Recommended instead of using a Data Export API token, especially after HTTP 401 or 403 token failures.`;
 
 function registerLoginTool(server: McpServer): void {
   server.tool(
@@ -82,16 +83,20 @@ function registerLoginStatusTool(server: McpServer): void {
     async () => {
       try {
         await oauthClient.waitForLogin();
+        const sessionId = await oauthClient.getSessionId();
+        const projects = sessionId !== null ? await getSignedInProjects() : {};
         const [status, credential] = await Promise.all([oauthClient.getStatus(), getActiveCredential()]);
+        const sameSession = sessionId !== null && sessionId === await oauthClient.getSessionId();
         return textResult(JSON.stringify({
           signedIn: status.signedIn,
           projectPermissions: "Requests are restricted by your admin or member permissions for each Clarity project; signing in does not grant additional project permissions.",
-          ...(status.signedIn ? await getSignedInProjects() : {}),
+          ...(status.signedIn && sameSession ? projects : {}),
           loginPending: status.loginPending,
           lastLoginError: status.lastLoginError,
           signInRemembered: status.persistentStorage,
           dataExportTokenConfigured: !!CLARITY_API_TOKEN,
           activeCredential: describeCredential(credential),
+          ...(credential === CredentialKind.DataExportToken ? { recommendation: getDataExportTokenSignInMessage() } : {}),
         }, null, 2), !!status.lastLoginError);
       } catch (error) {
         console.error("Could not read the Clarity sign-in status:", error);
