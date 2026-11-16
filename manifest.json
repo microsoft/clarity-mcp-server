@@ -2,8 +2,8 @@
   "manifest_version": "0.2",
   "name": "@microsoft/clarity-mcp-server",
   "display_name": "Microsoft Clarity",
-  "version": "2.1.0",
-  "description": "The official MCP Server for Microsoft Clarity",
+  "version": "3.0.0",
+  "description": "The official MCP server for Microsoft Clarity",
   "long_description": "This extension enables integration between AI systems and Microsoft Clarity, providing access to project analytics, documentation, and session recordings.",
   "author": {
     "name": "Microsoft",

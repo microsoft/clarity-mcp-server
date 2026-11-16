@@ -22,12 +22,20 @@ export const PROJECT_ID_HEADER = "x-clarity-project-id";
  * for a request without an explicit project.
  * @param sessionId - The sign-in owning the project selection, when supplied.
  * An account switch prevents using credentials from another sign-in.
+ * @param signal - Optional deadline or cancellation signal shared by both attempts
+ * and response-body consumption.
  * @returns The initial or retried HTTP response, or `null` if the OAuth client
  * cannot provide an access token before the first attempt.
  * @throws Propagates token-acquisition, JSON-serialization, and network errors
  * so the caller can log them and produce an appropriate tool result.
  */
-export async function sendWithOAuth(url: string, body: unknown, projectId: string | undefined, sessionId?: string): Promise<Response | null> {
+export async function sendWithOAuth(
+  url: string,
+  body: unknown,
+  projectId: string | undefined,
+  sessionId?: string,
+  signal?: AbortSignal,
+): Promise<Response | null> {
   const send = (token: string) => fetch(url, {
     method: "POST",
     headers: {
@@ -36,6 +44,7 @@ export async function sendWithOAuth(url: string, body: unknown, projectId: strin
       ...(projectId ? { [PROJECT_ID_HEADER]: projectId } : {}),
     },
     body: JSON.stringify(body),
+    signal,
   });
 
   let accessToken = await oauthClient.getAccessToken(undefined, sessionId);

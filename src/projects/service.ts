@@ -8,7 +8,7 @@ import { CredentialKind } from "../auth/models.js";
 import { oauthClient } from "../auth/oauth.js";
 import { sendWithOAuth } from "../auth/request.js";
 import { CLARITY_API_TOKEN, mcpApiUrl } from "../config.js";
-import { LOGIN_TOOL } from "../features/auth/tools.js";
+import { LOGIN_TOOL, LOGOUT_TOOL } from "../features/auth/tools.js";
 import { LIST_PROJECTS_TOOL, SELECT_PROJECT_TOOL } from "../features/projects/tools.js";
 import {
   AI_VISIBILITY_DOMAIN_NOT_VERIFIED_ERROR,
@@ -21,6 +21,8 @@ import type { ProjectsResponse, ProjectSummary } from "./models.js";
 import { describeProject, describeProjectList, findProject } from "./utils.js";
 
 export const PROJECTS_LIST_URL = mcpApiUrl("/projects/list");
+
+const PROJECTS_REQUEST_TIMEOUT_MS = 30 * 1000;
 
 // How long the signed-in user's project list is reused. Checked only when a tool runs; nothing refreshes in the background,
 // so an idle chat makes no requests and the first use after expiry re-reads the list.
@@ -163,7 +165,17 @@ async function getOAuthProjects(refresh: boolean, expectedSessionId?: string): P
     return { projects: projectCache.projects };
   }
   if (projectFetch?.sessionId !== sessionId) {
-    const promise = fetchOAuthProjects(sessionId).finally(() => {
+    const signal = AbortSignal.timeout(PROJECTS_REQUEST_TIMEOUT_MS);
+    const promise = fetchOAuthProjects(sessionId, signal).catch((error) => {
+      if (!signal.aborted) {
+        throw error;
+      }
+      console.error("The Clarity project-list request timed out:", error);
+      return {
+        projects: [],
+        error: "The Clarity project-list request timed out. Try again shortly.",
+      };
+    }).finally(() => {
       if (projectFetch?.promise === promise) {
         projectFetch = null;
       }
@@ -173,8 +185,8 @@ async function getOAuthProjects(refresh: boolean, expectedSessionId?: string): P
   return projectFetch.promise;
 }
 
-async function fetchOAuthProjects(sessionId: string): Promise<ProjectsResponse> {
-  const response = await sendWithOAuth(PROJECTS_LIST_URL, {}, undefined, sessionId);
+async function fetchOAuthProjects(sessionId: string, signal: AbortSignal): Promise<ProjectsResponse> {
+  const response = await sendWithOAuth(PROJECTS_LIST_URL, {}, undefined, sessionId, signal);
   const currentSessionId = await oauthClient.getSessionId();
   if (currentSessionId === null) {
     projectCache = null;
@@ -229,15 +241,10 @@ async function explainProjectDenied(projectId: string, expectedSessionId?: strin
   if (findProject(latest.projects, projectId)) {
     return `Microsoft Clarity refused this action on project ${projectId}, which is still listed as accessible to your account. Ask the user to verify their admin or member role and the permissions needed for this action in the project's settings, and contact a project admin if needed; signing in again does not grant additional access.`;
   }
-  // Forget the selection so the next request does not hit the same refusal; the user picks another project.
-  const wasSelected = (await oauthClient.getSelectedProjectId(sessionId))?.toLowerCase() === projectId.toLowerCase();
+  // Clear only the denied selection, without overwriting a concurrent project switch.
+  const wasSelected = await oauthClient.selectProject(null, sessionId, projectId);
   if (await oauthClient.getSessionId() !== sessionId) {
     return SESSION_CHANGED_MESSAGE;
-  }
-  if (wasSelected) {
-    if (!(await oauthClient.selectProject(null, sessionId))) {
-      return SESSION_CHANGED_MESSAGE;
-    }
   }
   const next = wasSelected && latest.projects.length > 0 ? ` It is no longer selected; ask the user which project to use instead, then call \`${SELECT_PROJECT_TOOL}\`.` : "";
   if (known) {
@@ -300,7 +307,10 @@ async function explainRequestFailure(response: Response, projectId: string | und
     return body?.error || "Microsoft Clarity rejected the request parameters. Check them against the tool description and try again.";
   }
   if (response.status === 401) {
-    return `Microsoft Clarity did not accept your sign-in. Call the \`${LOGIN_TOOL}\` tool to sign in again, then call \`${LIST_PROJECTS_TOOL}\` to check access to ${projectId ? `project ${projectId}` : "the corresponding project"}. Ask the user to verify their admin or member role and the permissions needed for the action; signing in does not grant additional project permissions.`;
+    const recovery = await oauthClient.isSignedIn()
+      ? `A sign-in is still stored, so calling \`${LOGIN_TOOL}\` alone will report that you are already signed in. Ask the user to approve signing out and signing in again. Only after approval, call \`${LOGOUT_TOOL}\`, then \`${LOGIN_TOOL}\`; do not repeatedly call \`${LOGIN_TOOL}\`.`
+      : `Call the \`${LOGIN_TOOL}\` tool to sign in again.`;
+    return `Microsoft Clarity did not accept your sign-in. ${recovery} After sign-in succeeds, call \`${LIST_PROJECTS_TOOL}\` to check access to ${projectId ? `project ${projectId}` : "the corresponding project"}. Ask the user to verify their admin or member role and the permissions needed for the action; signing in does not grant additional project permissions.`;
   }
   if (response.status === 403) {
     if (response.url === PROJECTS_LIST_URL) {

@@ -65,14 +65,23 @@ export class ClarityOAuthClient {
   }
 
   // Remembers (or with null, forgets) the project to query. Taken under the refresh lock so a concurrent refresh, which
-  // rewrites the stored sign-in, cannot drop the choice. Returns false when not signed in.
-  async selectProject(projectId: string | null, expectedSessionId?: string): Promise<boolean> {
+  // rewrites the stored sign-in, cannot drop the choice. Returns false when signed out or an expected session or selection changed.
+  async selectProject(
+    projectId: string | null,
+    expectedSessionId?: string,
+    expectedSelectedProjectId?: string,
+  ): Promise<boolean> {
     return this.withRefreshLock(async () => {
       const store = await this.getStore();
       const session = await store.load();
       if (!session || (expectedSessionId !== undefined && session.sessionId !== expectedSessionId)) {
         return false;
       }
+      if (expectedSelectedProjectId !== undefined &&
+        session.selectedProjectId?.toLowerCase() !== expectedSelectedProjectId.toLowerCase()) {
+        return false;
+      }
+
       const { selectedProjectId: _previous, ...rest } = session;
       await store.save(projectId ? { ...rest, selectedProjectId: projectId } : rest);
       return true;
@@ -302,6 +311,11 @@ export class ClarityOAuthClient {
       const previous = await (await this.getStore()).load();
       if (this.pendingLogin !== login) {
         return null;
+      }
+      // The browser flow is complete; credential storage must not race its timeout.
+      if (login.timer) {
+        clearTimeout(login.timer);
+        login.timer = null;
       }
       await this.storeTokens(tokens, randomUUID());
       return { previous };
