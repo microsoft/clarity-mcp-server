@@ -2,6 +2,7 @@
 src/
 types/
 tests/
+scripts/
 
 # Configuration files
 .npmrc
