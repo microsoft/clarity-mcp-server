@@ -35,11 +35,19 @@ Configure your MCP client to start the latest package with `npx`:
   "mcpServers": {
     "microsoft-clarity": {
       "command": "npx",
-      "args": ["-y", "@microsoft/clarity-mcp-server"]
+      "args": ["-y", "--prefer-online", "@microsoft/clarity-mcp-server@latest"]
     }
   }
 }
 ```
+
+This launches `npx -y --prefer-online @microsoft/clarity-mcp-server@latest`. Keep any existing server arguments after the package name.
+
+- `@latest` selects the latest published version.
+- `--prefer-online` revalidates package metadata with the registry on each launch while reusing cached package contents when possible; clearing the npm cache is not required.
+- `-y` avoids installation prompts.
+
+A running server does not update in place. Restart the MCP server (or its client) to check for and use updates.
 
 #### Option 2: Install globally
 
@@ -68,7 +76,7 @@ clarity-mcp-server
 
 #### Visual Studio Code Extension
 
-[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install+Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522clarity-server%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522%2540microsoft%252Fclarity-mcp-server%2522%255D%257D)
+[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install+Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522clarity-server%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522-y%2522%252C%2522--prefer-online%2522%252C%2522%2540microsoft%252Fclarity-mcp-server%2540latest%2522%255D%257D)
 
 Click the button above to install the Microsoft Clarity MCP server directly in Visual Studio Code.
 
@@ -110,7 +118,8 @@ MCP clients typically require configuration to connect to the server. Here's a g
       "command": "npx",
       "args": [
         "-y",
-        "@microsoft/clarity-mcp-server"
+        "--prefer-online",
+        "@microsoft/clarity-mcp-server@latest"
       ]
     }
   }
